@@ -1,0 +1,367 @@
+/* =========================================================================
+   GLÜCKSRAD – SIGNAGE-LAYOUT
+   Branding kommt über CSS-Variablen aus config.js (via js/app.js).
+   ========================================================================= */
+
+/* --- Selbst gehostete Schrift (kein Google-CDN -> offline-tauglich) ----- */
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 400;
+  font-display: swap;
+  src: url('../assets/fonts/lato-400.woff2') format('woff2');
+}
+@font-face {
+  font-family: 'Lato';
+  font-style: normal;
+  font-weight: 700;
+  font-display: swap;
+  src: url('../assets/fonts/lato-700.woff2') format('woff2');
+}
+/* Poppins = OceanPilot-Markenschrift (wie im Logo) – für Headlines/Overlay */
+@font-face { font-family:'Poppins'; font-style:normal; font-weight:400; font-display:swap;
+  src:url('../assets/fonts/poppins-400.woff2') format('woff2'); }
+@font-face { font-family:'Poppins'; font-style:normal; font-weight:600; font-display:swap;
+  src:url('../assets/fonts/poppins-600.woff2') format('woff2'); }
+@font-face { font-family:'Poppins'; font-style:normal; font-weight:700; font-display:swap;
+  src:url('../assets/fonts/poppins-700.woff2') format('woff2'); }
+
+:root {
+  --bg: #f6f6f4;
+  --fg: #000000;
+  --accent: #e63027;
+}
+
+html, body {
+  width: 100%;
+  height: 100%;
+  overflow: hidden;                 /* Vollbild-Kiosk, kein Scrollen */
+}
+body {
+  margin: 0;
+  font-family: 'Lato', sans-serif;
+  color: var(--fg);
+  background: var(--bg);
+  -webkit-user-select: none;
+  user-select: none;
+  cursor: none;                     /* kein Mauszeiger auf dem Display */
+}
+i { font-style: italic; }
+b, strong { font-weight: 700; }
+
+/* --- Hintergrund: animierte Marine-Szene (Canvas) --------------------- */
+#bg-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+/* --- Hintergrund-Video (optional) + Abdunkler ------------------------- */
+#bg-video {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  z-index: 0;
+  /* weich geblurrt + abgedunkelt + leicht vergrössert (kein Blur-Rand) ->
+     der Kampagnentext wird zu ambienter Marine-Bewegung und konkurriert
+     nicht mit unserem Text. Blur/Helligkeit hier bei Bedarf anpassen. */
+  filter: blur(9px) brightness(.45) saturate(1.05);
+  transform: scale(1.12);
+}
+#bg-scrim {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  /* links dunkler (Textlesbarkeit), rechts offener fürs Rad */
+  background:
+    linear-gradient(90deg, rgba(7,20,42,.92) 0%, rgba(7,20,42,.72) 34%,
+                           rgba(7,20,42,.32) 60%, rgba(7,20,42,.55) 100%),
+    linear-gradient(0deg,  rgba(7,20,42,.55), rgba(7,20,42,.12));
+}
+
+/* --- Bühne: Querformat – links Text, rechts Rad ------------------------ */
+#stage {
+  position: relative;
+  z-index: 2;
+  display: flex;
+  flex-direction: row;
+  align-items: center;
+  justify-content: space-between;
+  height: 100vh;
+  padding: 5vh 5vw;
+  box-sizing: border-box;
+  gap: 3vw;
+}
+
+.brand-col {
+  --logo-w: clamp(240px, 30vw, 540px);
+  flex: 1 1 46%;
+  max-width: 48%;
+  display: flex;
+  flex-direction: column;
+  align-items: center;        /* alle Texte zentriert */
+  justify-content: center;
+  text-align: center;
+  gap: 2.6vh;
+}
+
+.wheel-col {
+  flex: 1 1 56%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: flex-end;        /* Rad nach rechts schieben */
+}
+
+.logo {
+  width: var(--logo-w);             /* deutlich grösser + sichtbarer */
+  height: auto;
+  object-fit: contain;
+  filter: drop-shadow(0 6px 22px rgba(0, 0, 0, .55));
+}
+
+.intro-message {
+  text-align: center;
+  text-shadow: 0 2px 18px rgba(0, 0, 0, .55);
+}
+#brand-title {
+  font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: clamp(30px, 4.6vmin, 70px);
+  font-weight: 700;
+  letter-spacing: -0.012em;
+  line-height: 1.08;
+  display: block;
+  color: #fff;
+}
+.brand-rule {                     /* feiner Akzent-Trennstrich */
+  display: block;
+  width: clamp(48px, 6vmin, 84px);
+  height: 3px;
+  margin: 0.72em auto;
+  border-radius: 2px;
+  background: var(--accent);
+  opacity: .9;
+}
+#brand-subtitle {
+  font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: clamp(17px, 2.3vmin, 30px);
+  font-weight: 400;
+  letter-spacing: 0.01em;
+  line-height: 1.45;
+  color: rgba(255, 255, 255, .82);
+}
+
+/* Feld-Texte (radial, entlang der Speiche): mehrzeilig zentriert, RADIAL MITTIG
+   im Feld (gleicher Abstand vom Textende zum Rand wie vom inneren Textende zur
+   Nabe – User-Wunsch). padding-left schiebt den zentrierten Block leicht nach
+   aussen bis zur Band-Mitte (6% = ausgewogen; 22% war zu weit aussen). */
+.easyWheel .eWheel > .eWheel-txt-wrap > .eWheel-txt > div {
+  text-align: center !important;
+  padding-left: 6% !important;
+  padding-right: 0 !important;
+}
+
+/* --- Rad --------------------------------------------------------------- */
+.wheel-wrap {
+  position: relative;
+  width: 100%;
+  max-width: min(52vw, 88vh);       /* im Querformat durch die Höhe begrenzt */
+  display: flex;
+  justify-content: flex-end;
+  align-items: center;
+}
+.wheel-wrap .easywheel { margin: 0; }
+
+/* --- Call-to-Action-Hinweis (nur im Leerlauf sichtbar) ----------------- */
+.cta-hint {
+  font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: clamp(13px, 1.7vmin, 22px);
+  font-weight: 600;
+  letter-spacing: 0.14em;
+  text-transform: uppercase;
+  color: var(--accent);
+  text-align: center;
+  min-height: 1.3em;
+  opacity: 0;
+  transition: opacity .4s ease;
+  text-shadow: 0 2px 14px rgba(0, 0, 0, .6);
+}
+body.attract .cta-hint {
+  opacity: 1;
+  animation: ctaPulse 2.6s ease-in-out infinite;
+  transform-origin: center;
+}
+@keyframes ctaPulse {
+  0%, 100% { transform: scale(1);    opacity: .75; }
+  50%      { transform: scale(1.05); opacity: 1;   }
+}
+
+/* --- Attract: langsames Leerlauf-Drehen der Rad-Scheibe ----------------
+   will-change/translateZ promoten die Scheibe auf eine eigene GPU-Ebene,
+   damit die Dauer-Rotation die schwache Display-Hardware nicht ausbremst
+   (sonst kann die Eingabe-Reaktion spürbar verzögern). */
+body.attract .easywheel .eWheel {
+  animation: attractSpin 26s linear infinite;
+  will-change: transform;
+  transform: translateZ(0);
+  backface-visibility: hidden;
+}
+@keyframes attractSpin {
+  from { transform: rotate(0deg);   }
+  to   { transform: rotate(360deg); }
+}
+
+/* --- Ergebnis-Overlay -------------------------------------------------- */
+.overlay {
+  position: fixed;
+  inset: 0;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: rgba(0, 0, 0, .55);
+  opacity: 0;
+  visibility: hidden;
+  transition: opacity .35s ease, visibility .35s ease;
+  z-index: 100;
+}
+.overlay.visible { opacity: 1; visibility: visible; }
+
+.overlay-card {
+  background: #fff;
+  color: #111;
+  border-radius: 18px;
+  padding: clamp(24px, 5vmin, 60px);
+  max-width: 84vw;
+  max-height: 92vh;
+  overflow-y: auto;                 /* passt auch im Hochformat mit Hinweis + QR */
+  text-align: center;
+  box-shadow: 0 24px 80px rgba(0, 0, 0, .45);
+  border-top: 10px solid var(--accent);
+  animation: cardIn .4s ease both;
+}
+@keyframes cardIn {
+  from { transform: translateY(24px) scale(.96); opacity: 0; }
+  to   { transform: translateY(0)    scale(1);   opacity: 1; }
+}
+
+.overlay-title {
+  font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: clamp(26px, 4.2vmin, 52px);
+  font-weight: 700;
+  letter-spacing: -0.01em;
+  margin-bottom: .3em;
+}
+.overlay-text {
+  font-size: clamp(16px, 2.4vmin, 28px);
+  color: #444;
+}
+.overlay-prize {
+  font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: clamp(24px, 3.8vmin, 46px);
+  font-weight: 700;
+  color: var(--accent);
+  margin: .5em 0;
+  line-height: 1.2;
+}
+.overlay-prize:empty { display: none; }
+
+/* Hinweistext unter dem Preis (z. B. Verlosungs-Bedingungen Hauptpreis) */
+.overlay-note {
+  font-size: clamp(12px, 1.7vmin, 19px);
+  line-height: 1.45;
+  color: #667;
+  max-width: 32em;
+  margin: 0 auto .2em;
+}
+.overlay-note:empty { display: none; }
+
+.overlay-qr {
+  margin: .6em auto .2em;
+  line-height: 0;
+}
+.overlay-qr:empty { display: none; }
+.overlay-qr img {
+  width: clamp(120px, 22vmin, 220px);
+  height: auto;
+  image-rendering: pixelated;
+}
+.overlay-qrhint {
+  font-size: clamp(13px, 1.8vmin, 22px);
+  color: #666;
+}
+
+/* --- Countdown (Zahl + schrumpfender Balken) --------------------------- */
+.overlay-countdown { margin-top: 16px; }
+.cd-text {
+  font-size: clamp(13px, 1.7vmin, 20px);
+  font-weight: 700;
+  color: #5b6b80;
+  margin-bottom: 7px;
+}
+.cd-bar {
+  width: 100%;
+  height: 8px;
+  border-radius: 6px;
+  background: #e6ecf3;
+  overflow: hidden;
+}
+.cd-fill {
+  height: 100%;
+  width: 100%;
+  border-radius: 6px;
+  background: var(--accent);
+}
+
+/* Gewinn/Niete-Färbung des Overlays */
+.overlay.lose .overlay-card { border-top-color: #9aa0a6; }
+.overlay.lose .overlay-prize,
+.overlay.lose .overlay-note,
+.overlay.lose .overlay-qr,
+.overlay.lose .overlay-qrhint { display: none; }
+
+/* --- Debug-Log (nur bei behavior.debug === true) ----------------------- */
+#debug-log {
+  position: fixed;
+  top: 0;
+  left: 0;
+  z-index: 9999;
+  max-width: 60vw;
+  padding: 8px 10px;
+  background: rgba(0, 0, 0, .78);
+  color: #7CFC00;
+  font: 13px/1.4 monospace;
+  pointer-events: none;
+  white-space: pre-wrap;
+}
+
+/* --- Hochformat-Fallback (falls Display doch gedreht) ------------------ */
+@media (orientation: portrait) {
+  #stage {
+    flex-direction: column;
+    justify-content: space-evenly;
+    gap: 1.5vh;
+  }
+  .brand-col {
+    flex: 0 0 auto;
+    max-width: 92%;
+    align-items: center;
+    text-align: center;
+  }
+  .intro-message { text-align: center; margin-left: 0; }
+  .cta-hint { text-align: center; margin-left: 0; }
+  body.attract .cta-hint { transform-origin: center; }
+  .wheel-col { flex: 0 1 auto; width: 100%; justify-content: center; }
+  .wheel-wrap { max-width: min(92vw, 60vh); justify-content: center; }
+  /* Logo so breit wie der Titel „Das Brüesch Glücksrad": Titel ~60vw, Logo-Inhalt
+     füllt 85% der PNG-Breite -> Box 60/0.85 ≈ 71vw (bei 1080px = ~765px). */
+  .logo { width: min(71vw, 900px); }
+  #bg-scrim {
+    background: linear-gradient(180deg, rgba(7,20,42,.85), rgba(7,20,42,.35) 40%, rgba(7,20,42,.85));
+  }
+}
