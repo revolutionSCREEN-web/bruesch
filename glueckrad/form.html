@@ -44,8 +44,9 @@
     button:active { background: #256a2b; }
     .foot { text-align: center; font-size: 12px; color: #9fb4cc; margin-top: 18px; }
     /* Danke-Ansicht */
-    #thanks { display: none; text-align: center; padding: 30px 10px; }
-    #thanks .big { font-size: 46px; }
+    #thanks { display: none; text-align: center; padding: 24px 10px 36px; }
+    #thanks .thanks-logo { display: block; width: min(72%, 260px); height: auto; margin: 4px auto 22px; }
+    #thanks .big { font-size: 46px; line-height: 1; }
     #thanks h2 { font-size: 24px; margin: 12px 0 6px; }
     #thanks p { color: #cfe0f2; font-size: 15px; }
     /* Setup-Hinweis, falls Script-URL fehlt */
@@ -118,7 +119,9 @@
     </div>
 
     <div id="thanks">
-      <div class="big">⛵️</div>
+      <img class="thanks-logo" src="assets/images/bruesch-logo-weiss.png" alt="Brüesch Gestaltungstechnik"
+           onerror="this.style.display='none'">
+      <div class="big">✅</div>
       <h2>Vielen Dank!</h2>
       <p>Deine Angaben sind erfasst – wir melden uns wegen deines Gewinns.</p>
     </div>

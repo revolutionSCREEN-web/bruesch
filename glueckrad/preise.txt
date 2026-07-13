@@ -1,0 +1,38 @@
+# =============================================================================
+#  BRÜESCH GLÜCKSRAD  –  PREISE
+# =============================================================================
+#  Hier die Rad-Felder eintragen. Nach dem Ändern die Datei einfach speichern –
+#  das Rad liest sie beim Laden automatisch (diese Datei liegt neben index.html).
+#
+#  REGELN
+#  - EINE ZEILE = EIN FELD auf dem Rad. Die Reihenfolge = Reihenfolge im Rad.
+#  - Zeilen, die mit # beginnen, sind Kommentare und werden ignoriert.
+#  - Leerzeilen werden ignoriert.
+#
+#  AUFBAU JE ZEILE  (die Teile werden mit einem senkrechten Strich | getrennt):
+#
+#      Rad-Text | Gewinn-Text | GEWINN oder NIETE | (optional) Hinweis
+#
+#      1) Rad-Text      Was auf dem Feld steht. Für einen Zeilenumbruch  //  schreiben.
+#      2) Gewinn-Text   Erscheint gross im Ergebnis-Fenster nach dem Dreh.
+#                       Bei einer NIETE leer lassen.
+#      3) GEWINN/NIETE  GEWINN = echter Gewinn (zeigt QR-Code fürs Formular).
+#                       NIETE  = kein Gewinn (kurzes "Auf ein neues Glück").
+#      4) Hinweis       Optional: kleiner Text unter dem Gewinn
+#                       (z. B. Verlosungs-Bedingungen). Kann weggelassen werden.
+#
+#  Die Farben (Grün/Anthrazit) werden automatisch gesetzt – nicht nötig hier.
+#
+#  BEISPIEL-ZEILE:
+#      Gratis//Kaffee | Ein Gratis-Kaffee an unserer Bar | GEWINN
+# =============================================================================
+
+Hauptpreis//CHF 500.– | Teilnahme an der Verlosung: CHF 500.– an eine Fahrzeugbeschriftung | GEWINN | Die Verlosung findet nach der Messe statt. Es wird keine Korrespondenz geführt. Der Gewinner wird persönlich benachrichtigt.
+
+Popcorn | Frisches Popcorn zum Mitnehmen | GEWINN
+
+GreenPower//Drink | Ein GreenPower Drink | GEWINN
+
+GreenKey | Ein GreenKey | GEWINN
+
+Auf ein//neues Glück | | NIETE

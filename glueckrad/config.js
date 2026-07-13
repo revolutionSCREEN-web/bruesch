@@ -29,6 +29,9 @@ window.GLUECKSRAD_CONFIG = {
   },
 
   /* ---- Rad-Segmente ------------------------------------------------------
+     >>> PREISE ÄNDERN am einfachsten in der Datei `preise.txt` (Klartext)! <<<
+     Das Rad liest beim Laden `preise.txt`; die folgende Liste dient nur als
+     SICHERUNG (falls preise.txt fehlt oder lokal per Doppelklick geöffnet wird).
      Ergebnis ist ECHT ZUFÄLLIG und gleichverteilt über alle Segmente.
      Farben wechseln Grün ↔ Anthrazit (wie die Brüesch-Website) für Kontrast;
      weisse Segment-Schrift bleibt auf beiden gut lesbar.
@@ -75,7 +78,8 @@ window.GLUECKSRAD_CONFIG = {
     triggerKeyCode:    13,     // Taste des Bewegungssensors (13 = Enter)
     cooldownMs:        12000,  // Sperre nach Auslösung (Doppel-Trigger-Schutz)
     spinDurationMs:    8000,   // Dauer einer Drehung
-    overlayAutoCloseMs:15000,  // Ergebnis-Overlay (mit QR) bleibt so lange + Countdown
+    overlayAutoCloseMs:15000,  // GEWINN-Overlay (mit QR) bleibt so lange + Countdown
+    loseAutoCloseMs:   4000,   // NIETE-Overlay kurz zeigen -> schnell wieder drehen
     idleWatchdogMs:    40000,  // Notbremse zurück in Bereitschaft (> Dreh + Overlay)
     attractMode:       true,   // Rad dreht im Leerlauf langsam als Blickfang
     sound:             true,   // Tick-Sound beim Drehen

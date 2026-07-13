@@ -101,6 +101,55 @@
     while (dbgBox.childNodes.length > 14) dbgBox.removeChild(dbgBox.lastChild);
   }
 
+  /* --- Preise aus preise.txt laden (einfache Bearbeitung ohne JS) --------
+     Format je Zeile:  Rad-Text | Gewinn-Text | GEWINN/NIETE | (optional) Hinweis
+     - "//" im Rad-Text = Zeilenumbruch.  - #-Zeilen/Leerzeilen = ignoriert.
+     - Farben werden automatisch vergeben (bestehende Farbe je Position, sonst
+       abwechselnd Grün/Anthrazit).
+     Schlägt der Abruf fehl (z. B. lokal per file://), bleiben die Segmente aus
+     config.js als Sicherung erhalten. */
+  function parsePrizes(text) {
+    var lines = text.split(/\r?\n/);
+    var ids = 'abcdefghijklmnopqrstuvwxyz';
+    var out = [];
+    for (var i = 0; i < lines.length; i++) {
+      var raw = lines[i].trim();
+      if (!raw || raw.charAt(0) === '#') continue;            // Kommentar/Leerzeile
+      var parts = raw.split('|');
+      var label = (parts[0] || '').trim();
+      if (!label) continue;
+      var prize = (parts[1] || '').trim();
+      var flag  = (parts[2] || '').trim().toUpperCase();
+      var note  = (parts[3] || '').trim();
+      // GEWINN/NIETE: explizit per Flag; ohne Flag = Gewinn, wenn ein Preistext da ist
+      var win = parts.length >= 3 ? (flag.indexOf('NIET') === -1) : (prize.length > 0);
+      var k = out.length;
+      var existing = (CFG.segments && CFG.segments[k]) || null;
+      out.push({
+        id:    existing && existing.id ? existing.id : (ids.charAt(k) || ('s' + k)),
+        name:  label.replace(/\/\//g, '<br>'),               // // -> Zeilenumbruch
+        color: existing ? existing.color : (k % 2 === 0 ? '#2E7D33' : '#23272A'),
+        win:   win,
+        prize: win && prize ? prize : null,
+        note:  note || undefined,
+        qr:    null
+      });
+    }
+    return out.length ? out : null;
+  }
+  function loadPrizes(done) {
+    if (!window.fetch) { done(); return; }
+    try {
+      fetch('preise.txt', { cache: 'no-store' })
+        .then(function (r) { return r.ok ? r.text() : null; })
+        .then(function (t) {
+          if (t) { var segs = parsePrizes(t); if (segs) CFG.segments = segs; }
+          done();
+        })
+        .catch(function () { done(); });      // Fallback: Segmente aus config.js
+    } catch (e) { done(); }
+  }
+
   /* --- Branding aus config auf die Seite anwenden ----------------------- */
   function applyBranding() {
     var b = CFG.brand;
@@ -265,7 +314,10 @@
     // Fallback-Cooldown wird nicht mehr gebraucht (Ergebnis erreicht) -> stoppen,
     // sonst würde er das Overlay vorzeitig schliessen.
     clearTimeout(cooldownTimer);
-    startCountdown(CFG.behavior.overlayAutoCloseMs);
+    // Gewinn: volle Dauer (Zeit zum QR-Scannen). Niete: kurz (schnell wieder drehen).
+    var closeMs = won ? CFG.behavior.overlayAutoCloseMs
+                      : (CFG.behavior.loseAutoCloseMs || CFG.behavior.overlayAutoCloseMs);
+    startCountdown(closeMs);
   }
 
   /* --- Countdown im Overlay (Zahl + schrumpfender Balken) --------------- */
@@ -365,15 +417,19 @@
 
   /* --- Start ------------------------------------------------------------- */
   $(function () {
-    applyBranding();
-    initWheel();
-    if (document.body) document.body.tabIndex = -1;   // Body fokussierbar machen
-    bindInputs();
-    grabFocus();
-    setInterval(grabFocus, 2000);                     // Fokus periodisch nachfassen
-    document.addEventListener('visibilitychange', function () { if (!document.hidden) grabFocus(); });
-    dbg('Bereit. Auslöser-Taste = Code ' + CFG.behavior.triggerKeyCode);
-    enterAttract();
+    // Zuerst die Preise aus preise.txt holen (Fallback = Segmente aus config.js),
+    // danach erst das Rad bauen.
+    loadPrizes(function () {
+      applyBranding();
+      initWheel();
+      if (document.body) document.body.tabIndex = -1;   // Body fokussierbar machen
+      bindInputs();
+      grabFocus();
+      setInterval(grabFocus, 2000);                     // Fokus periodisch nachfassen
+      document.addEventListener('visibilitychange', function () { if (!document.hidden) grabFocus(); });
+      dbg('Bereit. Auslöser-Taste = Code ' + CFG.behavior.triggerKeyCode);
+      enterAttract();
+    });
   });
 
 })();
