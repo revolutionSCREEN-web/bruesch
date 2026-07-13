@@ -79,7 +79,7 @@ window.GLUECKSRAD_CONFIG = {
     cooldownMs:        12000,  // Sperre nach Auslösung (Doppel-Trigger-Schutz)
     spinDurationMs:    8000,   // Dauer einer Drehung
     overlayAutoCloseMs:15000,  // GEWINN-Overlay (mit QR) bleibt so lange + Countdown
-    loseAutoCloseMs:   4000,   // NIETE-Overlay kurz zeigen -> schnell wieder drehen
+    loseAutoCloseMs:   3000,   // NIETE-Overlay kurz zeigen -> schnell wieder drehen
     idleWatchdogMs:    40000,  // Notbremse zurück in Bereitschaft (> Dreh + Overlay)
     attractMode:       true,   // Rad dreht im Leerlauf langsam als Blickfang
     sound:             true,   // Tick-Sound beim Drehen
