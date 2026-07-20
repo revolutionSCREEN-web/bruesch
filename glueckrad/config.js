@@ -86,6 +86,30 @@ window.GLUECKSRAD_CONFIG = {
     debug:             false   // true = Debug-Log am Bildschirm
   },
 
+  /* ---- Sensor Hub (optional, zweiter Auslöse-Weg) ------------------------
+     Statt (oder zusätzlich zum) USB-Bewegungssensor kann der revolutionSCREEN
+     Sensor Hub das Rad auslösen: ein ESP32 mit mmWave-Radar, der übers WLAN
+     meldet, wenn jemand vor das Display tritt.
+
+     >>> enabled: false = ausgeschaltet. Der USB-Sensor (Enter/Code 13) läuft
+         unverändert weiter. Beide Wege dürfen gleichzeitig aktiv sein. <<<
+
+     Zum Einschalten: enabled auf true und `host` auf die Adresse des Hubs.
+     Am Display ist die feste IP zuverlässiger als 'sensorhub.local', weil
+     nicht jeder Player mDNS auflöst. Die IP steht in der Weboberfläche des
+     Hubs oder auf dessen serieller Konsole.
+
+     ⚠ Der Hub spricht http/ws. Wird diese Seite über https ausgeliefert,
+       blockiert der Browser die Verbindung (Mixed Content) – die Seite dann
+       per http oder lokal vom Player ausliefern.                            */
+  sensorHub: {
+    enabled:       false,               // <<< true = Hub-Auslösung einschalten
+    host:          '192.168.1.121',     // IP oder 'sensorhub.local'
+    maxDistanzM:   0,                   // nur auslösen bis zu dieser Distanz (0 = egal)
+    abwesendAbMs:  3000,                // ms ohne Präsenz, bis wieder "frei" gilt
+    sperrzeitMs:   0                    // 0 = automatisch (Drehung + Overlay + Puffer)
+  },
+
   /* ---- Layout ----------------------------------------------------------- */
   layout: {
     wheelSize: 800   // Basisgrösse des Rads in px (skaliert responsiv)

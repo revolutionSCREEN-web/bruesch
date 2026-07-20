@@ -165,3 +165,36 @@ assets/
 - Getestet headless (Playwright/Chrome): Rendering, echter Zufall
   (Gleichverteilung), Zeiger=Ergebnis, Enter-Trigger, Doppel-Trigger-Schutz,
   Overlay + QR, Attract-Rückkehr – alles grün.
+
+## Auslösung über den Sensor Hub (optional)
+
+Neben dem USB-Bewegungssensor kann der **revolutionSCREEN Sensor Hub** das Rad
+auslösen — ein ESP32 mit mmWave-Radar, der übers WLAN meldet, wenn jemand vor das
+Display tritt. Vorteil: keine Tastatur-Fokus-Probleme in der LINK-App und eine
+einstellbare Erfassungsdistanz.
+
+**Standardmässig ausgeschaltet.** Der USB-Sensor (Enter/Code 13) läuft unverändert
+weiter; beide Wege dürfen gleichzeitig aktiv sein.
+
+Einschalten in `config.js`:
+
+```js
+sensorHub: {
+  enabled:     true,               // einschalten
+  host:        '192.168.1.121',    // IP des Hubs (oder 'sensorhub.local')
+  maxDistanzM: 2,                  // nur auslösen, wenn jemand näher als 2 m ist (0 = egal)
+}
+```
+
+Die IP steht in der Weboberfläche des Hubs. **Feste IP ist am Display zuverlässiger
+als `sensorhub.local`**, weil nicht jeder Player mDNS auflöst.
+
+⚠️ Der Hub spricht `http`/`ws`. Wird die Seite über **https** ausgeliefert (z. B. GitHub
+Pages), blockiert der Browser die Verbindung als Mixed Content — dann die Seite lokal
+oder per http vom Player ausliefern.
+
+Fällt der Hub aus oder ist er nicht erreichbar, läuft das Rad normal weiter und lässt
+sich weiterhin per Sensor-Taste oder Tap auslösen.
+
+Dateien: `js/sensorhub.js` (Client) und `js/sensorhub-anbindung.js` (Brücke).
+`js/app.js` bleibt unverändert — ausgelöst wird über denselben Weg wie ein Tap.
