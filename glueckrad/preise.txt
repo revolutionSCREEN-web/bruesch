@@ -1,8 +1,9 @@
 # =============================================================================
-#  BRÜESCH GLÜCKSRAD  –  PREISE
+#  BRÜESCH GLÜCKSRAD  –  PREISE UND MENGEN
 # =============================================================================
 #  Hier die Rad-Felder eintragen. Nach dem Ändern die Datei einfach speichern –
 #  das Rad liest sie beim Laden automatisch (diese Datei liegt neben index.html).
+#  Bequemer geht es auf der Seite `admin.html` (dort auch die Bestandsübersicht).
 #
 #  REGELN
 #  - EINE ZEILE = EIN FELD auf dem Rad. Die Reihenfolge = Reihenfolge im Rad.
@@ -11,28 +12,49 @@
 #
 #  AUFBAU JE ZEILE  (die Teile werden mit einem senkrechten Strich | getrennt):
 #
-#      Rad-Text | Gewinn-Text | GEWINN oder NIETE | (optional) Hinweis
+#   Rad-Text | Gewinn-Text | ART | Hinweis | Mengen Fr/Sa/So
 #
-#      1) Rad-Text      Was auf dem Feld steht. Für einen Zeilenumbruch  //  schreiben.
-#      2) Gewinn-Text   Erscheint gross im Ergebnis-Fenster nach dem Dreh.
-#                       Bei einer NIETE leer lassen.
-#      3) GEWINN/NIETE  GEWINN = echter Gewinn (zeigt QR-Code fürs Formular).
-#                       NIETE  = kein Gewinn (kurzes "Auf ein neues Glück").
-#      4) Hinweis       Optional: kleiner Text unter dem Gewinn
-#                       (z. B. Verlosungs-Bedingungen). Kann weggelassen werden.
+#    1) Rad-Text     Was auf dem Feld steht. Für einen Zeilenumbruch  //  schreiben.
+#    2) Gewinn-Text  Erscheint gross im Ergebnis-Fenster nach dem Dreh.
+#                    Bei einer NIETE leer lassen.
+#    3) ART          GEWINN     = normaler Preis (zeigt QR-Code fürs Formular)
+#                    HAUPTPREIS = wird genau so oft pro Tag ausgespielt wie in
+#                                 der Mengenspalte steht, gleichmässig über den
+#                                 Tag verteilt (siehe unten)
+#                    NIETE      = kein Gewinn, kurzes "Auf ein neues Glück"
+#    4) Hinweis      Optional: kleiner Text unter dem Gewinn. Kann leer bleiben –
+#                    der senkrechte Strich muss dann trotzdem stehen, wenn danach
+#                    noch die Mengen kommen.
+#    5) Mengen       Stückzahlen für Freitag/Samstag/Sonntag, z. B.  50/100/50
+#                    Leer oder "unbegrenzt" = keine Begrenzung (z. B. Trostpreis).
 #
-#  Die Farben (Grün/Anthrazit) werden automatisch gesetzt – nicht nötig hier.
+#  -----------------------------------------------------------------------------
+#  WIE DAS RAD DIE MENGEN EINHÄLT
+#
+#  - Ist die Tagesmenge eines Artikels aufgebraucht, kommt er an diesem Tag
+#    nicht mehr vor.
+#  - Die Menge wird über die ÖFFNUNGSZEIT gestreckt (Zeiten stehen in config.js):
+#    Das Rad rechnet laufend, wie viel zum jetzigen Zeitpunkt "dran" wäre. Wer
+#    dreht, wenn die Ausgabe dem Zeitplan voraus ist, bekommt eine Niete – so
+#    reicht die Ware bis Messeschluss.
+#  - Gezogen wird gewichtet nach Tagesmenge: Der Kugelschreiber hat die doppelte
+#    Menge und gewinnt darum doppelt so oft wie Trinkflasche oder Pad – ohne
+#    zweimal auf dem Rad zu stehen.
+#  - Gezählt wird pro Tag im Anzeigegerät. Am nächsten Messetag beginnt die
+#    Zählung von selbst wieder bei null.
 #
 #  BEISPIEL-ZEILE:
-#      Gratis//Kaffee | Ein Gratis-Kaffee an unserer Bar | GEWINN
+#      Gratis//Kaffee | Ein Gratis-Kaffee an unserer Bar | GEWINN | | 20/40/20
 # =============================================================================
 
-Hauptpreis//CHF 500.– | Teilnahme an der Verlosung: CHF 500.– an eine Fahrzeugbeschriftung | GEWINN | Die Verlosung findet nach der Messe statt. Es wird keine Korrespondenz geführt. Der Gewinner wird persönlich benachrichtigt.
+Hauptpreis//Kinogutschein | Hauptpreis CHF 100.– Kinogutschein | HAUPTPREIS | Der Gutschein wird am Stand übergeben. Es wird keine Korrespondenz geführt. | 1/1/1
 
-Popcorn | Frisches Popcorn zum Mitnehmen | GEWINN
+Kugel-//schreiber | Ein Brüesch-Kugelschreiber | GEWINN | | 100/200/100
 
-GreenPower//Drink | Ein GreenPower Drink | GEWINN
+Trinkflasche | Eine Brüesch-Trinkflasche in Grün | GEWINN | | 50/100/50
 
-GreenKey | Ein GreenKey | GEWINN
+GreenTEA | Ein GreenTEA | GEWINN | | unbegrenzt
+
+Kühl-/Wärme-//Pad | Ein Kühl-/Wärme-Pad | GEWINN | | 50/100/50
 
 Auf ein//neues Glück | | NIETE

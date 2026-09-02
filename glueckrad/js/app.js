@@ -19,6 +19,7 @@
   var overlayTimer  = null;
   var watchdogTimer = null;
   var countdownTimer = null;
+  var spinTimer      = null;     // Ende der gesteuerten Drehung
 
   var tick = document.getElementById('tick');
   var wheelInst = null;          // Referenz auf die easyWheel-Instanz (für currentSlice)
@@ -118,11 +119,14 @@
       var parts = raw.split('|');
       var label = (parts[0] || '').trim();
       if (!label) continue;
-      var prize = (parts[1] || '').trim();
-      var flag  = (parts[2] || '').trim().toUpperCase();
-      var note  = (parts[3] || '').trim();
-      // GEWINN/NIETE: explizit per Flag; ohne Flag = Gewinn, wenn ein Preistext da ist
-      var win = parts.length >= 3 ? (flag.indexOf('NIET') === -1) : (prize.length > 0);
+      var prize  = (parts[1] || '').trim();
+      var flag   = (parts[2] || '').trim().toUpperCase();
+      var note   = (parts[3] || '').trim();
+      var mengen = parseMengen(parts[4]);                     // "50/100/50" -> {5:50,6:100,0:50}
+      // ART: NIETE = kein Gewinn, HAUPTPREIS = eigener Ausspiel-Weg, sonst Gewinn.
+      // Ohne Flag gilt: Gewinn, wenn ein Preistext da ist.
+      var istNiete = flag.indexOf('NIET') !== -1;
+      var win = parts.length >= 3 ? !istNiete : (prize.length > 0);
       var k = out.length;
       var existing = (CFG.segments && CFG.segments[k]) || null;
       out.push({
@@ -130,13 +134,33 @@
         name:  label.replace(/\/\//g, '<br>'),               // // -> Zeilenumbruch
         color: existing ? existing.color : (k % 2 === 0 ? '#2E7D33' : '#23272A'),
         win:   win,
+        hauptpreis: flag.indexOf('HAUPTPREIS') !== -1,
         prize: win && prize ? prize : null,
         note:  note || undefined,
+        mengen: mengen,
         qr:    null
       });
     }
     return out.length ? out : null;
   }
+
+  /* --- Mengenspalte "50/100/50" -> { Freitag, Samstag, Sonntag } ---------
+     Leer, "-" oder "unbegrenzt" = keine Begrenzung (null).
+     Eine einzelne Zahl gilt für alle drei Tage.                            */
+  function parseMengen(spalte) {
+    var t = (spalte || '').trim().toLowerCase();
+    if (!t || t === '-' || t.indexOf('unbegrenzt') === 0) return null;
+    var teile = t.split('/');
+    var zahl = function (x) { var n = parseInt(String(x).replace(/[^0-9]/g, ''), 10); return isFinite(n) ? n : null; };
+    if (teile.length === 1) {
+      var alle = zahl(teile[0]);
+      return alle === null ? null : { '5': alle, '6': alle, '0': alle };
+    }
+    var fr = zahl(teile[0]), sa = zahl(teile[1]), so = zahl(teile[2]);
+    if (fr === null && sa === null && so === null) return null;
+    return { '5': fr === null ? 0 : fr, '6': sa === null ? 0 : sa, '0': so === null ? 0 : so };
+  }
+
   function loadPrizes(done) {
     if (!window.fetch) { done(); return; }
     try {
@@ -219,7 +243,8 @@
       // Dreh-Geräusch übernimmt playWheelSpinSound (vorab getaktet, exakt entlang
       // der Rad-Kurve). Kein Einzel-Klick pro onStep -> sonst doppelt.
       onStep: function () {},
-      onComplete: function () { onSpinComplete(); }
+      // Das Plugin zeichnet nur noch – gedreht wird gesteuert in dreheZu().
+      onComplete: function () {}
     });
     // Instanz merken – das Plugin legt sie als .easyWheel aufs Element
     wheelInst = document.querySelector('.easywheel').easyWheel;
@@ -233,9 +258,63 @@
     document.body.classList.add('attract');
   }
   function exitAttract() {
+    // Aktuelle Position der Leerlauf-Animation einfrieren, damit die Drehung
+    // nahtlos dort weitergeht statt auf 0 zu springen.
+    var el = document.querySelector('.easywheel .eWheel');
+    var w  = el ? aktuellerWinkel(el) : 0;
     document.body.classList.remove('attract');
-    // laufende Animation stoppen, damit das Plugin die Rotation übernimmt
-    $('.easywheel').find('.eWheel').css('transform', '');
+    if (el) { el.style.transition = 'none'; el.style.transform = 'rotate(' + w + 'deg)'; }
+  }
+
+  /* --- Ziel bestimmen: Ausspiel-Steuerung (Kontingent/Streckung) --------
+     Fällt die Steuerung aus (Datei fehlt, Fehler), wird echt zufällig
+     gezogen – das Rad läuft dann wie vor der Erweiterung weiter.          */
+  function zieheZiel() {
+    if (window.Ausspielung && CFG.ausspielung) {
+      try {
+        var i = window.Ausspielung.ziehe(CFG);
+        if (typeof i === 'number' && i >= 0 && i < CFG.segments.length) {
+          dbg('Ziel: ' + i + ' (' + String(CFG.segments[i].name).replace(/<[^>]+>/g, ' ') + ')');
+          return i;
+        }
+      } catch (e) { dbg('Ausspielung-Fehler: ' + e.message); }
+    }
+    return Math.floor(Math.random() * CFG.segments.length);
+  }
+
+  /* --- Rad-Winkel aus der Transform-Matrix lesen ------------------------ */
+  function aktuellerWinkel(el) {
+    var tf = window.getComputedStyle(el).transform;
+    if (!tf || tf === 'none') return 0;
+    var m = tf.match(/matrix\(([^)]+)\)/);
+    if (!m) return 0;
+    var v = m[1].split(',');
+    var grad = Math.atan2(parseFloat(v[1]), parseFloat(v[0])) * 180 / Math.PI;
+    return (grad + 360) % 360;
+  }
+
+  /* --- Rad gezielt auf ein Segment drehen -------------------------------
+     Segment 0 beginnt oben am Zeiger und läuft im Uhrzeigersinn. Die Mitte
+     von Segment i liegt darum bei  360 - Segmentwinkel*i - Segmentwinkel/2.
+     Die Drehung selbst macht eine CSS-Transition (läuft auch auf Tizen 4.0);
+     die Kurve entspricht easeOutQuart, passend zum vorgetakteten Ratschen-Ton. */
+  function dreheZu(index) {
+    var el = document.querySelector('.easywheel .eWheel');
+    if (!el) { onSpinComplete(index); return; }
+    var seg   = 360 / CFG.segments.length;
+    var ziel  = (360 - seg * index - seg / 2 + 360) % 360;
+    var start = aktuellerWinkel(el);
+    var ende  = start + 4 * 360 + ((ziel - start + 360) % 360);
+    var dauer = CFG.behavior.spinDurationMs;
+
+    el.style.transition = 'none';
+    el.style.transform  = 'rotate(' + start + 'deg)';
+    void el.offsetWidth;                                    // Reflow: Startwert festschreiben
+    el.style.transition = 'transform ' + dauer + 'ms cubic-bezier(0.165, 0.84, 0.44, 1)';
+    el.style.transform  = 'rotate(' + ende + 'deg)';
+
+    clearTimeout(spinTimer);
+    spinTimer = setTimeout(function () { onSpinComplete(index); }, dauer + 40);
   }
 
   /* --- Auslöser (Bewegungssensor / Tap) --------------------------------- */
@@ -255,16 +334,22 @@
     clearTimeout(cooldownTimer);
     cooldownTimer = setTimeout(returnToReady, CFG.behavior.cooldownMs);
     armWatchdog();
-    document.getElementById('spin').click();    // -> easyWheel start()
+    dreheZu(zieheZiel());                       // Ziel steht vorher fest (Ausspiel-Steuerung)
   }
 
   /* --- Ergebnis anzeigen ------------------------------------------------ */
-  function onSpinComplete() {
+  function onSpinComplete(index) {
     state = 'result';
-    // Tatsächlich gelandete Slice aus der Instanz lesen (Quelle der Wahrheit).
-    // (Das Plugin füllt onComplete-Argumente in diesem Build nicht, daher currentSlice.)
-    var idx = (wheelInst && typeof wheelInst.currentSlice === 'number') ? wheelInst.currentSlice : -1;
+    // Das Ergebnis stand VOR der Drehung fest (Ausspiel-Steuerung) und das Rad
+    // ist gezielt dorthin gedreht – Zeiger und Ergebnis stimmen also überein.
+    var idx = (typeof index === 'number') ? index
+            : ((wheelInst && typeof wheelInst.currentSlice === 'number') ? wheelInst.currentSlice : -1);
     var seg = CFG.segments[idx] || {};
+
+    // Ausgabe fürs Tageskontingent verbuchen (zählt nur an Messetagen mit).
+    if (window.Ausspielung && CFG.ausspielung) {
+      try { window.Ausspielung.verbuche(CFG, idx); } catch (e) { dbg('Verbuchen fehlgeschlagen: ' + e.message); }
+    }
     var won = !!seg.win;
     var m   = CFG.messages;
 

@@ -1,0 +1,252 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Glücksrad – Preise &amp; Mengen</title>
+<style>
+  :root{ --gruen:#2E7D33; --hell:#88BF67; --anthrazit:#23272A; --rand:#d9e0d9; --grau:#667; }
+  *{ box-sizing:border-box; }
+  body{ margin:0; background:#f4f6f4; color:#1a1f1a;
+        font-family:-apple-system,BlinkMacSystemFont,'Segoe UI',Roboto,Helvetica,Arial,sans-serif; }
+  header{ background:var(--anthrazit); color:#fff; padding:18px 24px; }
+  header h1{ margin:0; font-size:19px; font-weight:700; }
+  header p{ margin:4px 0 0; font-size:13px; color:#b9c2b9; }
+  main{ max-width:1100px; margin:0 auto; padding:24px; }
+  section{ background:#fff; border:1px solid var(--rand); border-radius:10px; padding:20px; margin-bottom:22px; }
+  h2{ margin:0 0 4px; font-size:16px; }
+  h2 + p.hinweis{ margin:0 0 16px; }
+  p.hinweis{ font-size:13px; color:var(--grau); line-height:1.5; }
+  table{ width:100%; border-collapse:collapse; font-size:14px; }
+  th,td{ text-align:left; padding:8px 6px; border-bottom:1px solid #eef1ee; vertical-align:middle; }
+  th{ font-size:12px; text-transform:uppercase; letter-spacing:.04em; color:var(--grau); font-weight:600; }
+  input[type=text],input[type=number],select{ width:100%; padding:7px 9px; border:1px solid var(--rand);
+        border-radius:6px; font-size:14px; font-family:inherit; background:#fbfcfb; }
+  input:focus,select:focus{ outline:2px solid var(--hell); outline-offset:-1px; }
+  td.menge input{ width:70px; }
+  button{ font:inherit; font-weight:600; padding:9px 16px; border-radius:7px; border:1px solid transparent;
+        cursor:pointer; background:var(--gruen); color:#fff; }
+  button.sekundaer{ background:#fff; color:var(--anthrazit); border-color:var(--rand); }
+  button.warnung{ background:#fff; color:#a12; border-color:#f0c8c8; }
+  button:hover{ filter:brightness(1.07); }
+  .knopfzeile{ display:flex; gap:10px; flex-wrap:wrap; margin-top:16px; }
+  textarea{ width:100%; height:230px; font-family:ui-monospace,Menlo,Consolas,monospace; font-size:12.5px;
+        border:1px solid var(--rand); border-radius:8px; padding:12px; background:#fbfcfb; line-height:1.5; }
+  .balken{ height:8px; background:#eef1ee; border-radius:4px; overflow:hidden; margin-top:5px; }
+  .balken i{ display:block; height:100%; background:var(--hell); }
+  .kpi{ display:flex; gap:26px; flex-wrap:wrap; margin-bottom:14px; }
+  .kpi div{ font-size:13px; color:var(--grau); }
+  .kpi b{ display:block; font-size:23px; color:var(--anthrazit); font-weight:700; }
+  .warnbox{ background:#fff8e6; border:1px solid #f0dfae; border-radius:8px; padding:12px 14px;
+        font-size:13px; line-height:1.55; color:#6b5514; margin-bottom:16px; }
+  .art-niete{ color:var(--grau); }
+  code{ background:#eef1ee; padding:1px 5px; border-radius:4px; font-size:12.5px; }
+</style>
+</head>
+<body>
+
+<header>
+  <h1>Brüesch Glücksrad – Preise &amp; Mengen</h1>
+  <p>Gewerbeausstellung · Freitag 17–21 · Samstag 10–21 · Sonntag 10–17 Uhr</p>
+</header>
+
+<main>
+
+  <!-- ============ Preise ============ -->
+  <section>
+    <h2>Felder auf dem Rad</h2>
+    <p class="hinweis">
+      Die Reihenfolge entspricht der Reihenfolge im Rad. <b>Rad-Text:</b> was auf dem Feld steht –
+      <code>//</code> erzeugt einen Zeilenumbruch. <b>Mengen:</b> Stückzahlen je Messetag; leer =
+      unbegrenzt. Der Artikel mit der doppelten Menge wird automatisch doppelt so oft ausgespielt.
+    </p>
+    <table>
+      <thead>
+        <tr>
+          <th style="width:19%">Rad-Text</th>
+          <th style="width:26%">Gewinn-Text (Ergebnis-Fenster)</th>
+          <th style="width:11%">Art</th>
+          <th style="width:20%">Hinweis (optional)</th>
+          <th style="width:8%">Fr</th><th style="width:8%">Sa</th><th style="width:8%">So</th>
+        </tr>
+      </thead>
+      <tbody id="zeilen"></tbody>
+    </table>
+    <div class="knopfzeile">
+      <button type="button" id="neu" class="sekundaer">+ Feld hinzufügen</button>
+      <button type="button" id="erzeugen">Datei erzeugen</button>
+    </div>
+  </section>
+
+  <!-- ============ Datei ============ -->
+  <section>
+    <h2>preise.txt</h2>
+    <p class="hinweis">
+      Diese Datei muss neben <code>index.html</code> liegen. Zum Übernehmen entweder herunterladen und
+      ins Repo <code>revolutionSCREEN-web/bruesch</code> (Ordner <code>glueckrad/</code>) legen, oder den
+      Text kopieren und die Datei dort direkt auf github.com bearbeiten. Nach dem Speichern baut GitHub
+      Pages automatisch – etwa ein bis zwei Minuten, dann zeigt das Display die neuen Preise.
+    </p>
+    <textarea id="ausgabe" spellcheck="false"></textarea>
+    <div class="knopfzeile">
+      <button type="button" id="kopieren" class="sekundaer">In die Zwischenablage</button>
+      <button type="button" id="laden">preise.txt herunterladen</button>
+    </div>
+  </section>
+
+  <!-- ============ Bestand ============ -->
+  <section>
+    <h2>Ausgabe heute</h2>
+    <div class="warnbox">
+      <b>Wichtig:</b> Diese Zahlen stammen aus dem Gerät, auf dem diese Seite gerade geöffnet ist.
+      Der echte Messestand wird im <b>Anzeigegerät</b> gezählt – die Übersicht ist also nur dort
+      aussagekräftig, wo auch das Rad läuft. Am nächsten Messetag beginnt die Zählung von selbst neu.
+    </div>
+    <div class="kpi" id="kpi"></div>
+    <table>
+      <thead><tr>
+        <th style="width:30%">Artikel</th><th style="width:12%">ausgegeben</th>
+        <th style="width:12%">Kontingent</th><th style="width:12%">Rest</th><th>Verlauf</th>
+      </tr></thead>
+      <tbody id="bestand"></tbody>
+    </table>
+    <div class="knopfzeile">
+      <button type="button" id="aktualisieren" class="sekundaer">Aktualisieren</button>
+      <button type="button" id="reset" class="warnung">Zählung für heute zurücksetzen</button>
+    </div>
+  </section>
+
+</main>
+
+<script src="config.js"></script>
+<script src="js/ausspielung.js"></script>
+<script>
+(function () {
+  'use strict';
+  var CFG  = window.GLUECKSRAD_CONFIG;
+  var TAGE = ['5', '6', '0'];                 // Freitag, Samstag, Sonntag
+
+  /* ---------- Tabelle aufbauen ---------- */
+  function zeileHtml(s) {
+    s = s || { name: '', prize: '', art: 'GEWINN', note: '', mengen: null };
+    var m = s.mengen || {};
+    var art = s.art || (s.win === false ? 'NIETE' : (s.hauptpreis ? 'HAUPTPREIS' : 'GEWINN'));
+    var tr = document.createElement('tr');
+    tr.innerHTML =
+      '<td><input type="text" class="f-name" value="' + esc(roh(s.name)) + '"></td>' +
+      '<td><input type="text" class="f-prize" value="' + esc(s.prize || '') + '"></td>' +
+      '<td><select class="f-art">' +
+        opt('GEWINN', art) + opt('HAUPTPREIS', art) + opt('NIETE', art) +
+      '</select></td>' +
+      '<td><input type="text" class="f-note" value="' + esc(s.note || '') + '"></td>' +
+      TAGE.map(function (t) {
+        var v = (m && typeof m[t] === 'number') ? m[t] : '';
+        return '<td class="menge"><input type="number" min="0" class="f-m" data-tag="' + t + '" value="' + v + '"></td>';
+      }).join('');
+    return tr;
+  }
+  function opt(w, gewaehlt) { return '<option' + (w === gewaehlt ? ' selected' : '') + '>' + w + '</option>'; }
+  function roh(n) { return String(n || '').replace(/<br\s*\/?>/gi, '//'); }
+  function esc(t)  { return String(t).replace(/&/g, '&amp;').replace(/"/g, '&quot;').replace(/</g, '&lt;'); }
+
+  var tbody = document.getElementById('zeilen');
+  (CFG.segments || []).forEach(function (s) { tbody.appendChild(zeileHtml(s)); });
+  document.getElementById('neu').onclick = function () { tbody.appendChild(zeileHtml(null)); };
+
+  /* ---------- preise.txt erzeugen ---------- */
+  var KOPF = [
+    '# =============================================================================',
+    '#  BRÜESCH GLÜCKSRAD  –  PREISE UND MENGEN',
+    '# =============================================================================',
+    '#  Erzeugt mit admin.html. Aufbau je Zeile:',
+    '#',
+    '#     Rad-Text | Gewinn-Text | ART | Hinweis | Mengen Fr/Sa/So',
+    '#',
+    '#  ART: GEWINN = normaler Preis · HAUPTPREIS = genau nach Mengenangabe pro Tag,',
+    '#       über den Tag verteilt · NIETE = kein Gewinn.',
+    '#  Mengen leer oder "unbegrenzt" = keine Begrenzung.',
+    '#  "//" im Rad-Text erzeugt einen Zeilenumbruch auf dem Feld.',
+    '#  Die Mengen werden über die Öffnungszeit gestreckt (Zeiten stehen in config.js).',
+    '# =============================================================================',
+    ''
+  ].join('\n');
+
+  function erzeugen() {
+    var zeilen = [];
+    [].forEach.call(tbody.children, function (tr) {
+      var name  = tr.querySelector('.f-name').value.trim();
+      if (!name) return;
+      var prize = tr.querySelector('.f-prize').value.trim();
+      var art   = tr.querySelector('.f-art').value;
+      var note  = tr.querySelector('.f-note').value.trim();
+      var mengen = [].map.call(tr.querySelectorAll('.f-m'), function (i) { return i.value.trim(); });
+      var mSpalte = mengen.every(function (v) { return v === ''; }) ? '' : mengen.map(function (v) { return v === '' ? '0' : v; }).join('/');
+      var teile = [name, art === 'NIETE' ? '' : prize, art];
+      if (note || mSpalte) teile.push(note);
+      if (mSpalte) teile.push(mSpalte);
+      zeilen.push(teile.join(' | '));
+    });
+    var text = KOPF + '\n' + zeilen.join('\n\n') + '\n';
+    document.getElementById('ausgabe').value = text;
+    return text;
+  }
+  document.getElementById('erzeugen').onclick = erzeugen;
+
+  document.getElementById('kopieren').onclick = function () {
+    var t = document.getElementById('ausgabe');
+    if (!t.value) erzeugen();
+    t.select();
+    try { document.execCommand('copy'); this.textContent = 'Kopiert ✓';
+          var b = this; setTimeout(function () { b.textContent = 'In die Zwischenablage'; }, 1800); }
+    catch (e) { alert('Bitte den Text von Hand markieren und kopieren.'); }
+  };
+
+  document.getElementById('laden').onclick = function () {
+    var text = erzeugen();
+    var a = document.createElement('a');
+    a.href = URL.createObjectURL(new Blob([text], { type: 'text/plain;charset=utf-8' }));
+    a.download = 'preise.txt';
+    document.body.appendChild(a); a.click(); document.body.removeChild(a);
+  };
+
+  /* ---------- Bestandsübersicht ---------- */
+  function bestand() {
+    var u = window.Ausspielung.uebersicht(CFG);
+    var tage = { '5': 'Freitag', '6': 'Samstag', '0': 'Sonntag' };
+    var heute = new Date().getDay();
+    var kpi = document.getElementById('kpi');
+    kpi.innerHTML =
+      '<div><b>' + u.drehungen + '</b>Drehungen heute</div>' +
+      '<div><b>' + (tage[heute] || 'kein Messetag') + '</b>' + u.datum + '</div>' +
+      '<div><b>' + (u.plan ? (u.plan.von + '–' + u.plan.bis) : '—') + '</b>Öffnungszeit</div>' +
+      '<div><b>' + (u.zeitanteil === null ? '—' : Math.round(u.zeitanteil * 100) + ' %') + '</b>der Zeit vorbei</div>';
+
+    var tb = document.getElementById('bestand');
+    tb.innerHTML = '';
+    u.zeilen.forEach(function (z) {
+      var tr = document.createElement('tr');
+      var anteil = (z.menge && z.menge > 0) ? Math.min(100, Math.round(z.raus / z.menge * 100)) : 0;
+      tr.innerHTML =
+        '<td>' + z.name + '</td>' +
+        '<td>' + z.raus + '</td>' +
+        '<td>' + (z.menge === null ? (z.geplant ? '<span class="hinweis">geplant ' + z.geplant + '</span>' : 'unbegrenzt') : z.menge) + '</td>' +
+        '<td>' + (z.rest === null ? '—' : z.rest) + '</td>' +
+        '<td>' + (z.menge === null ? '<span class="art-niete">ohne Begrenzung</span>'
+                : '<div class="balken"><i style="width:' + anteil + '%"></i></div>'
+                  + (z.soll !== null ? '<span class="hinweis">nach Zeitplan wären jetzt ' + z.soll + ' dran</span>' : '')) + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+  document.getElementById('aktualisieren').onclick = bestand;
+  document.getElementById('reset').onclick = function () {
+    if (!confirm('Die heutige Zählung dieses Geräts wird auf null gesetzt. Fortfahren?')) return;
+    window.Ausspielung.zuruecksetzen();
+    bestand();
+  };
+
+  erzeugen();
+  bestand();
+})();
+</script>
+</body>
+</html>

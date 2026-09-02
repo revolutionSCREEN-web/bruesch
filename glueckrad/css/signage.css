@@ -52,6 +52,7 @@ b, strong { font-weight: 700; }
 /* --- Hintergrund: animierte Marine-Szene (Canvas) --------------------- */
 #bg-canvas {
   position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;   /* Fallback Tizen 4.0 */
   inset: 0;
   width: 100%;
   height: 100%;
@@ -62,6 +63,7 @@ b, strong { font-weight: 700; }
 /* --- Hintergrund-Video (optional) + Abdunkler ------------------------- */
 #bg-video {
   position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;   /* Fallback Tizen 4.0 */
   inset: 0;
   width: 100%;
   height: 100%;
@@ -75,6 +77,7 @@ b, strong { font-weight: 700; }
 }
 #bg-scrim {
   position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;   /* Fallback Tizen 4.0 */
   inset: 0;
   z-index: 1;
   pointer-events: none;
@@ -96,10 +99,12 @@ b, strong { font-weight: 700; }
   height: 100vh;
   padding: 5vh 5vw;
   box-sizing: border-box;
-  gap: 3vw;
 }
+/* Abstand statt Flexbox-gap (gap kann Tizen 4.0 nicht) */
+#stage > .wheel-col { margin-left: 3vw; }
 
 .brand-col {
+  --logo-w: 30vw;   /* Fallback Tizen 4.0 */
   --logo-w: clamp(240px, 30vw, 540px);
   flex: 1 1 46%;
   max-width: 48%;
@@ -108,8 +113,8 @@ b, strong { font-weight: 700; }
   align-items: center;        /* alle Texte zentriert */
   justify-content: center;
   text-align: center;
-  gap: 2.6vh;
 }
+.brand-col > * + * { margin-top: 2.6vh; }
 
 .wheel-col {
   flex: 1 1 56%;
@@ -132,6 +137,7 @@ b, strong { font-weight: 700; }
 }
 #brand-title {
   font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: 4.6vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(30px, 4.6vmin, 70px);
   font-weight: 700;
   letter-spacing: -0.012em;
@@ -141,6 +147,7 @@ b, strong { font-weight: 700; }
 }
 .brand-rule {                     /* feiner Akzent-Trennstrich */
   display: block;
+  width: 6vmin;   /* Fallback Tizen 4.0 */
   width: clamp(48px, 6vmin, 84px);
   height: 3px;
   margin: 0.72em auto;
@@ -150,6 +157,7 @@ b, strong { font-weight: 700; }
 }
 #brand-subtitle {
   font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: 2.3vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(17px, 2.3vmin, 30px);
   font-weight: 400;
   letter-spacing: 0.01em;
@@ -171,6 +179,7 @@ b, strong { font-weight: 700; }
 .wheel-wrap {
   position: relative;
   width: 100%;
+  max-width: 88vh;                  /* Fallback Tizen 4.0 */
   max-width: min(52vw, 88vh);       /* im Querformat durch die Höhe begrenzt */
   display: flex;
   justify-content: flex-end;
@@ -181,6 +190,7 @@ b, strong { font-weight: 700; }
 /* --- Call-to-Action-Hinweis (nur im Leerlauf sichtbar) ----------------- */
 .cta-hint {
   font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: 1.7vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(13px, 1.7vmin, 22px);
   font-weight: 600;
   letter-spacing: 0.14em;
@@ -220,6 +230,7 @@ body.attract .easywheel .eWheel {
 /* --- Ergebnis-Overlay -------------------------------------------------- */
 .overlay {
   position: fixed;
+  top: 0; right: 0; bottom: 0; left: 0;   /* Fallback Tizen 4.0 */
   inset: 0;
   display: flex;
   align-items: center;
@@ -236,6 +247,7 @@ body.attract .easywheel .eWheel {
   background: #fff;
   color: #111;
   border-radius: 18px;
+  padding: 5vmin;   /* Fallback Tizen 4.0 */
   padding: clamp(24px, 5vmin, 60px);
   max-width: 84vw;
   max-height: 92vh;
@@ -252,17 +264,20 @@ body.attract .easywheel .eWheel {
 
 .overlay-title {
   font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: 4.2vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(26px, 4.2vmin, 52px);
   font-weight: 700;
   letter-spacing: -0.01em;
   margin-bottom: .3em;
 }
 .overlay-text {
+  font-size: 2.4vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(16px, 2.4vmin, 28px);
   color: #444;
 }
 .overlay-prize {
   font-family: 'Poppins', 'Lato', sans-serif;
+  font-size: 3.8vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(24px, 3.8vmin, 46px);
   font-weight: 700;
   color: var(--accent);
@@ -273,6 +288,7 @@ body.attract .easywheel .eWheel {
 
 /* Hinweistext unter dem Preis (z. B. Verlosungs-Bedingungen Hauptpreis) */
 .overlay-note {
+  font-size: 1.7vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(12px, 1.7vmin, 19px);
   line-height: 1.45;
   color: #667;
@@ -287,11 +303,13 @@ body.attract .easywheel .eWheel {
 }
 .overlay-qr:empty { display: none; }
 .overlay-qr img {
+  width: 22vmin;   /* Fallback Tizen 4.0 */
   width: clamp(120px, 22vmin, 220px);
   height: auto;
   image-rendering: pixelated;
 }
 .overlay-qrhint {
+  font-size: 1.8vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(13px, 1.8vmin, 22px);
   color: #666;
 }
@@ -299,6 +317,7 @@ body.attract .easywheel .eWheel {
 /* --- Countdown (Zahl + schrumpfender Balken) --------------------------- */
 .overlay-countdown { margin-top: 16px; }
 .cd-text {
+  font-size: 1.7vmin;   /* Fallback Tizen 4.0 */
   font-size: clamp(13px, 1.7vmin, 20px);
   font-weight: 700;
   color: #5b6b80;
@@ -345,8 +364,8 @@ body.attract .easywheel .eWheel {
   #stage {
     flex-direction: column;
     justify-content: space-evenly;
-    gap: 1.5vh;
   }
+  #stage > .wheel-col { margin-left: 0; margin-top: 1.5vh; }
   .brand-col {
     flex: 0 0 auto;
     max-width: 92%;
@@ -357,9 +376,11 @@ body.attract .easywheel .eWheel {
   .cta-hint { text-align: center; margin-left: 0; }
   body.attract .cta-hint { transform-origin: center; }
   .wheel-col { flex: 0 1 auto; width: 100%; justify-content: center; }
-  .wheel-wrap { max-width: min(92vw, 60vh); justify-content: center; }
+  .wheel-wrap { max-width: 92vw; justify-content: center; }   /* Fallback Tizen 4.0 */
+  .wheel-wrap { max-width: min(92vw, 60vh); }
   /* Logo so breit wie der Titel „Das Brüesch Glücksrad": Titel ~60vw, Logo-Inhalt
      füllt 85% der PNG-Breite -> Box 60/0.85 ≈ 71vw (bei 1080px = ~765px). */
+  .logo { width: 71vw; }            /* Fallback Tizen 4.0 */
   .logo { width: min(71vw, 900px); }
   #bg-scrim {
     background: linear-gradient(180deg, rgba(7,20,42,.85), rgba(7,20,42,.35) 40%, rgba(7,20,42,.85));

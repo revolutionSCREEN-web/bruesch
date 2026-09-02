@@ -38,19 +38,57 @@ window.GLUECKSRAD_CONFIG = {
      win:true = Gewinn (QR zur Lead-Erfassung), win:false = Niete.
      qr = Einlöse-URL oder null.                                             */
   segments: [
-    { id:'a', name:'Hauptpreis<br>CHF 500.–',     color:'#2E7D33', win:true,
-      prize:'Teilnahme an der Verlosung: CHF 500.– an eine Fahrzeugbeschriftung',
-      note:'Die Verlosung findet nach der Messe statt. Es wird keine Korrespondenz geführt. Der Gewinner wird persönlich benachrichtigt.',
-      qr:null },
-    { id:'b', name:'Popcorn',                     color:'#23272A', win:true,
-      prize:'Frisches Popcorn zum Mitnehmen',                       qr:null },
-    { id:'c', name:'GreenPower<br>Drink',         color:'#2E7D33', win:true,
-      prize:'Ein GreenPower Drink',                                 qr:null },
-    { id:'d', name:'GreenKey',                    color:'#23272A', win:true,
-      prize:'Ein GreenKey',                                         qr:null },
-    { id:'e', name:'Auf ein<br>neues Glück',      color:'#23272A', win:false,
+    { id:'a', name:'Hauptpreis<br>Kinogutschein', color:'#2E7D33', win:true, hauptpreis:true,
+      prize:'Hauptpreis CHF 100.– Kinogutschein',
+      note:'Der Gutschein wird am Stand übergeben. Es wird keine Korrespondenz geführt.',
+      mengen:{ '5':1, '6':1, '0':1 },                               qr:null },
+    { id:'b', name:'Kugel-<br>schreiber',         color:'#23272A', win:true,
+      prize:'Ein Brüesch-Kugelschreiber',
+      mengen:{ '5':100, '6':200, '0':100 },                         qr:null },
+    { id:'c', name:'Trinkflasche',                color:'#2E7D33', win:true,
+      prize:'Eine Brüesch-Trinkflasche in Grün',
+      mengen:{ '5':50, '6':100, '0':50 },                           qr:null },
+    { id:'d', name:'GreenTEA',                    color:'#23272A', win:true,
+      prize:'Ein GreenTEA',
+      mengen:null,                                                  qr:null },
+    { id:'e', name:'Kühl-/Wärme-<br>Pad',        color:'#2E7D33', win:true,
+      prize:'Ein Kühl-/Wärme-Pad',
+      mengen:{ '5':50, '6':100, '0':50 },                           qr:null },
+    { id:'f', name:'Auf ein<br>neues Glück',      color:'#23272A', win:false,
       prize:null,                                                   qr:null }
   ],
+
+  /* ---- Ausspiel-Steuerung (Kontingente + Streckung über die Öffnungszeit)
+     Die STÜCKZAHLEN je Artikel stehen bei den Segmenten oben bzw. – einfacher
+     zu pflegen – in `preise.txt`. Hier stehen nur die Rahmenbedingungen.
+     Schlüssel der Wochentage: 0 = Sonntag, 5 = Freitag, 6 = Samstag.          */
+  ausspielung: {
+    enabled: true,
+
+    // Öffnungszeiten der Gewerbeausstellung – darüber wird die Warenmenge
+    // gleichmässig gestreckt, damit am Abend noch etwas da ist.
+    tage: {
+      '5': { von: '17:00', bis: '21:00' },   // Freitag
+      '6': { von: '10:00', bis: '21:00' },   // Samstag
+      '0': { von: '10:00', bis: '17:00' }    // Sonntag
+    },
+
+    // Erwartete Teilnehmer pro Messetag. Steuert, wie oft der HAUPTPREIS
+    // angeboten wird, damit er zuverlässig einmal pro Tag herauskommt.
+    teilnehmerProTag: 150,
+
+    // Anteil der Drehungen, die unabhängig vom Bestand eine Niete ergeben.
+    // 0.10 = etwa jede zehnte Drehung. Auf 0 setzen, wenn jeder etwas gewinnen soll.
+    nietenAnteil: 0.10,
+
+    // Wie weit die Ausgabe dem Zeitplan vorauslaufen darf, bevor gebremst wird
+    // (Anteil der Tagesmenge). 0.15 = 15 %. Grösser = lockerer, kleiner = strenger.
+    streckPuffer: 0.15,
+
+    // Gewicht für Artikel OHNE Mengenbegrenzung (Trostpreis GreenTEA).
+    // Zum Vergleich: Kugelschreiber wiegt am Samstag 200, Trinkflasche 100.
+    gewichtUnbegrenzt: 50
+  },
 
   /* ---- Ergebnis-Texte (Overlay) – Sie-Form (Gewerbeausstellung) --------- */
   messages: {
