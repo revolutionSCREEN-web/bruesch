@@ -73,8 +73,20 @@ window.GLUECKSRAD_CONFIG = {
       '0': { von: '10:00', bis: '17:00' }    // Sonntag
     },
 
-    // Erwartete Teilnehmer pro Messetag. Steuert, wie oft der HAUPTPREIS
-    // angeboten wird, damit er zuverlässig einmal pro Tag herauskommt.
+    // HAUPTPREIS (Kinogutschein CHF 100.–, einer pro Tag):
+    // Er ist für die ersten 150 Drehungen des Tages GESPERRT und kann damit
+    // frühestens beim 151. Klick auf den Buzzer fallen.
+    hauptpreisAbKlick: 150,
+
+    // Chance je Klick, sobald die Sperre vorbei ist. 0.2 = jeder fünfte Klick,
+    // der Gutschein fällt also im Schnitt fünf Klicks nach der Sperre – mal
+    // früher, mal später. So kann niemand mitzählen, wann er dran ist.
+    // (1 = sofort beim ersten Zug nach dem 150. Klick.)
+    // Kommen an einem Tag weniger als 151 Klicks zusammen, wird an diesem Tag
+    // KEIN Gutschein ausgespielt – so gewollt.
+    hauptpreisChance: 0.2,
+
+    // Nur noch informativ: erwartete Teilnehmer pro Messetag.
     teilnehmerProTag: 150,
 
     // Anteil der Drehungen, die unabhängig vom Bestand eine Niete ergeben.
@@ -113,7 +125,7 @@ window.GLUECKSRAD_CONFIG = {
 
   /* ---- Ergebnis-Texte (Overlay) – Sie-Form (Gewerbeausstellung) --------- */
   messages: {
-    cta:        'Näher treten – das Rad dreht von selbst',
+    cta:        'Drücken Sie den Buzzer',
     winTitle:   'Gewonnen!',
     winText:    'Ihr Gewinn:',
     loseTitle:  'Auf ein neues Glück!',

@@ -133,8 +133,16 @@
     var nietenAnteil = (typeof a.nietenAnteil === 'number') ? a.nietenAnteil : 0;
     if (nietenAnteil > 0 && Math.random() < nietenAnteil) return niete();
 
-    /* --- 2) Hauptpreis: genau 1 pro Tag, über den Tag verteilt ---------- */
-    var erwartet = a.teilnehmerProTag || 150;
+    /* --- 2) Hauptpreis: 1 pro Tag, FRÜHESTENS nach dem N-ten Klick -------
+       `hauptpreisAbKlick` (Standard 150) sperrt den Gutschein für die ersten
+       N Drehungen des Tages. `stand.drehungen` zählt die bereits erfolgten
+       Drehungen, die laufende ist also die (drehungen+1)-te: Bei 150 kann er
+       damit frühestens beim 151. Klick fallen.
+       Danach entscheidet `hauptpreisChance` je Klick (1 = sofort beim ersten
+       Zug nach der Sperre, 0.1 = im Schnitt nach zehn weiteren Klicks).    */
+    var abKlick   = (typeof a.hauptpreisAbKlick === 'number') ? a.hauptpreisAbKlick : 0;
+    var hpChance  = (typeof a.hauptpreisChance === 'number') ? a.hauptpreisChance : 1;
+    var klicks    = stand.drehungen || 0;
     for (var h = 0; h < segs.length; h++) {
       var s = segs[h];
       if (!s.win || !s.hauptpreis) continue;
@@ -142,10 +150,8 @@
       if (mengeH === null) mengeH = 1;
       var rausH = stand.ausgegeben[schluessel(s)] || 0;
       if (rausH >= mengeH) break;                       // heute schon vergeben
-      // Erwartete Zahl noch kommender Teilnehmer; je weniger übrig, desto höher die Chance.
-      var restTeilnehmer = Math.max(1, Math.round(erwartet * (1 - anteil)));
-      var chance = (mengeH - rausH) / restTeilnehmer;
-      if (Math.random() < chance) return h;
+      if (klicks < abKlick) break;                      // Sperre noch aktiv
+      if (Math.random() < hpChance) return h;
       break;
     }
 
@@ -204,7 +210,9 @@
       stand.ausgegeben[k] = (stand.ausgegeben[k] || 0) + 1;
     }
     speichereBestand(stand);
-    meldeAusgabe(cfg, seg, jetzt);          // zusätzlich ans Google Sheet (stört nicht, wenn es fehlschlägt)
+    // Zusätzlich ans Google Sheet. Bewusst gekapselt: Die lokale Zählung ist
+    // führend und darf NIE an der Meldung scheitern.
+    try { meldeAusgabe(cfg, seg, jetzt); } catch (e) {}
     return stand;
   }
 
@@ -284,6 +292,7 @@
 
   // JSONP-Abruf mit Zeitlimit; ruft `fertig(datenOderNull)` genau einmal auf.
   function jsonpAbruf(url, fertig, zeitlimit) {
+    if (!global.document || !global.document.createElement) { fertig(null); return; }
     var name = '_radCb' + (++laufendeNr) + '_' + Math.floor(Math.random() * 1e6);
     var script = global.document.createElement('script');
     var erledigt = false;
