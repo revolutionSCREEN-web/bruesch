@@ -266,6 +266,26 @@
     if (el) { el.style.transition = 'none'; el.style.transform = 'rotate(' + w + 'deg)'; }
   }
 
+  /* --- Abgleich mit dem Google Sheet ------------------------------------
+     Holt den Tagesstand beim Start und danach im Leerlauf regelmässig. So
+     beginnt die Zählung nach einem Neustart des Displays nicht bei null.
+     Läuft rein nebenher – das Rad wartet nie darauf.                       */
+  function starteOnlineAbgleich() {
+    if (!window.Ausspielung || !CFG.ausspielung || !CFG.ausspielung.online ||
+        !CFG.ausspielung.online.enabled) return;
+    var abgleich = function () {
+      try {
+        window.Ausspielung.synchronisiere(CFG, function (daten) {
+          if (daten) dbg('Sheet-Abgleich: ' + (daten.gesamt || 0) + ' Ausgaben heute');
+          else       dbg('Sheet-Abgleich ohne Antwort – lokale Zählung gilt');
+        });
+      } catch (e) { dbg('Sheet-Abgleich fehlgeschlagen: ' + e.message); }
+    };
+    abgleich();
+    var takt = CFG.ausspielung.online.abgleichAlleMs || 180000;
+    setInterval(function () { if (state === 'ready') abgleich(); }, takt);
+  }
+
   /* --- Ziel bestimmen: Ausspiel-Steuerung (Kontingent/Streckung) --------
      Fällt die Steuerung aus (Datei fehlt, Fehler), wird echt zufällig
      gezogen – das Rad läuft dann wie vor der Erweiterung weiter.          */
@@ -514,6 +534,7 @@
       document.addEventListener('visibilitychange', function () { if (!document.hidden) grabFocus(); });
       dbg('Bereit. Auslöser-Taste = Code ' + CFG.behavior.triggerKeyCode);
       enterAttract();
+      starteOnlineAbgleich();
     });
   });
 

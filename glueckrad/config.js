@@ -87,7 +87,28 @@ window.GLUECKSRAD_CONFIG = {
 
     // Gewicht für Artikel OHNE Mengenbegrenzung (Trostpreis GreenTEA).
     // Zum Vergleich: Kugelschreiber wiegt am Samstag 200, Trinkflasche 100.
-    gewichtUnbegrenzt: 50
+    gewichtUnbegrenzt: 50,
+
+    /* ---- Abgleich mit dem Google Sheet ---------------------------------
+       Jeder ausgespielte Gewinn wird zusätzlich ins Blatt „Ausgaben" des
+       Sheets geschrieben, und beim Start (sowie alle paar Minuten) holt sich
+       das Rad den Tagesstand von dort zurück.
+
+       >>> Damit beginnt die Zählung NICHT bei null, wenn das Display neu
+           startet oder sein Browser-Speicher geleert wird. <<<
+
+       Fällt das Netz aus, läuft alles unverändert mit der lokalen Zählung
+       weiter – das Rad wartet nie auf das Sheet.
+       `scriptUrl` ist dieselbe Web-App wie bei `lead.scriptUrl`; das Script
+       im Sheet muss dafür in der aktuellen Fassung bereitgestellt sein
+       (google-apps-script.gs, siehe README Abschnitt 5).                    */
+    online: {
+      enabled:    true,
+      scriptUrl:  'https://script.google.com/macros/s/AKfycbyQ076w0zb5L0jh1DZRNPZP3V3ZBhIti5fGCZpOoGAbT7WxcD64RoUQthMSxnsDPgBx/exec',
+      geraet:     'Display Messestand',   // erscheint im Sheet, falls mehrere Räder laufen
+      zeitlimitMs: 6000,                  // danach gilt einfach der lokale Stand
+      abgleichAlleMs: 180000              // Leerlauf-Abgleich alle 3 Minuten
+    }
   },
 
   /* ---- Ergebnis-Texte (Overlay) – Sie-Form (Gewerbeausstellung) --------- */

@@ -97,10 +97,12 @@
   <!-- ============ Bestand ============ -->
   <section>
     <h2>Ausgabe heute</h2>
-    <div class="warnbox">
-      <b>Wichtig:</b> Diese Zahlen stammen aus dem Gerät, auf dem diese Seite gerade geöffnet ist.
-      Der echte Messestand wird im <b>Anzeigegerät</b> gezählt – die Übersicht ist also nur dort
-      aussagekräftig, wo auch das Rad läuft. Am nächsten Messetag beginnt die Zählung von selbst neu.
+    <p class="hinweis" id="quelle">Wird geladen …</p>
+    <div class="knopfzeile" style="margin:0 0 16px">
+      <label style="font-size:13px;color:var(--grau);align-self:center">Messetag:
+        <input type="date" id="datum" style="width:auto;margin-left:6px">
+      </label>
+      <button type="button" id="holen" class="sekundaer">Aus dem Google Sheet laden</button>
     </div>
     <div class="kpi" id="kpi"></div>
     <table>
@@ -112,7 +114,7 @@
     </table>
     <div class="knopfzeile">
       <button type="button" id="aktualisieren" class="sekundaer">Aktualisieren</button>
-      <button type="button" id="reset" class="warnung">Zählung für heute zurücksetzen</button>
+      <button type="button" id="reset" class="warnung">Lokale Zählung dieses Geräts zurücksetzen</button>
     </div>
   </section>
 
@@ -209,7 +211,67 @@
     document.body.appendChild(a); a.click(); document.body.removeChild(a);
   };
 
-  /* ---------- Bestandsübersicht ---------- */
+  /* ---------- Bestandsübersicht ----------
+     Quelle ist das Google Sheet (geräteübergreifend, übersteht Neustarts).
+     Antwortet es nicht, wird die lokale Zählung dieses Geräts gezeigt.     */
+  var datumFeld = document.getElementById('datum');
+  datumFeld.value = new Date().toISOString().slice(0, 10);
+
+  function tagesmengeVon(seg, tagNr) {
+    return (seg.mengen && typeof seg.mengen[tagNr] === 'number') ? seg.mengen[tagNr] : null;
+  }
+
+  function ausSheet() {
+    var datum = datumFeld.value || new Date().toISOString().slice(0, 10);
+    var quelle = document.getElementById('quelle');
+    quelle.textContent = 'Frage das Google Sheet ab …';
+    if (!window.Ausspielung.standAusSheet) { quelle.textContent = 'Kein Sheet konfiguriert.'; bestand(); return; }
+    window.Ausspielung.standAusSheet(CFG, datum, function (daten) {
+      if (!daten || !daten.ausgegeben) {
+        quelle.innerHTML = '<b>Das Google Sheet hat nicht geantwortet.</b> Unten steht die Zählung ' +
+                           'dieses Geräts. Prüfen: ist das Script in der aktuellen Fassung bereitgestellt?';
+        bestand();
+        return;
+      }
+      quelle.innerHTML = 'Stand <b>aus dem Google Sheet</b> für den ' + daten.datum +
+                         ' · ' + (daten.gesamt || 0) + ' ausgespielte Gewinne. ' +
+                         'Diese Zahlen gelten geräteübergreifend und überstehen einen Neustart des Displays.';
+      zeichne(daten, datum);
+    });
+  }
+
+  function zeichne(daten, datum) {
+    var wtag = String(new Date(datum + 'T12:00:00').getDay());
+    var tage = { '5': 'Freitag', '6': 'Samstag', '0': 'Sonntag' };
+    var plan = (CFG.ausspielung && CFG.ausspielung.tage) ? CFG.ausspielung.tage[wtag] : null;
+    document.getElementById('kpi').innerHTML =
+      '<div><b>' + (daten.gesamt || 0) + '</b>Gewinne ausgespielt</div>' +
+      '<div><b>' + (tage[wtag] || 'kein Messetag') + '</b>' + datum + '</div>' +
+      '<div><b>' + (plan ? (plan.von + '–' + plan.bis) : '—') + '</b>Öffnungszeit</div>';
+
+    var tb = document.getElementById('bestand');
+    tb.innerHTML = '';
+    (CFG.segments || []).forEach(function (seg) {
+      if (!seg.win) return;
+      var k = window.Ausspielung._intern.schluessel(seg);
+      var raus = daten.ausgegeben[k] || 0;
+      var menge = tagesmengeVon(seg, wtag);
+      var name = String(seg.name || '').replace(/-\s*<br\s*\/?>/gi, '-').replace(/<br\s*\/?>/gi, ' ').replace(/<[^>]+>/g, '');
+      var anteil = (menge && menge > 0) ? Math.min(100, Math.round(raus / menge * 100)) : 0;
+      var tr = document.createElement('tr');
+      tr.innerHTML =
+        '<td>' + name + '</td>' +
+        '<td>' + raus + '</td>' +
+        '<td>' + (menge === null ? 'unbegrenzt' : menge) + '</td>' +
+        '<td>' + (menge === null ? '—' : Math.max(0, menge - raus)) + '</td>' +
+        '<td>' + (menge === null ? '<span class="art-niete">ohne Begrenzung</span>'
+                : '<div class="balken"><i style="width:' + anteil + '%"></i></div>') + '</td>';
+      tb.appendChild(tr);
+    });
+  }
+
+  document.getElementById('holen').onclick = ausSheet;
+
   function bestand() {
     var u = window.Ausspielung.uebersicht(CFG);
     var tage = { '5': 'Freitag', '6': 'Samstag', '0': 'Sonntag' };
@@ -237,15 +299,17 @@
       tb.appendChild(tr);
     });
   }
-  document.getElementById('aktualisieren').onclick = bestand;
+  document.getElementById('aktualisieren').onclick = ausSheet;
   document.getElementById('reset').onclick = function () {
-    if (!confirm('Die heutige Zählung dieses Geräts wird auf null gesetzt. Fortfahren?')) return;
+    if (!confirm('Die heutige Zählung DIESES Geräts wird auf null gesetzt.\n\n' +
+                 'Die Zeilen im Google Sheet bleiben bestehen – das Rad holt sich den Stand beim ' +
+                 'nächsten Abgleich von dort zurück. Fortfahren?')) return;
     window.Ausspielung.zuruecksetzen();
-    bestand();
+    ausSheet();
   };
 
   erzeugen();
-  bestand();
+  ausSheet();
 })();
 </script>
 </body>
