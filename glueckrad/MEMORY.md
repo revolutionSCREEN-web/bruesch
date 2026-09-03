@@ -325,3 +325,46 @@ Rads. Radwinkel und Ergebnis in allen Läufen identisch.
 **Ausfall geprüft:** Dienst mitten im Betrieb gestoppt → der Stand dreht und zählt unverändert
 weiter, der Beamer zeigt den Verbindungspunkt rot und hängt sich selbst wieder an (2 s, dann
 wachsend bis 20 s). Layout auch im Querformat 1920×1080 geprüft (Logo links, Rad rechts).
+
+## 03.09.2026 spät — Sheet-Abgleich: Konsolenfehler und träger Start
+
+Gefunden im **nachgestellten Tizen-Browser** (signage.css per `page.route` ohne alle Zeilen mit
+`clamp|min|max|inset|gap` ausliefern — so sieht Chromium 56 die Datei). Der Test lief eigentlich
+zur Kontrolle des Overlays und förderte nebenbei einen echten Fehler zutage:
+
+```
+_radCb1_775119 is not defined
+```
+
+**Ursache:** `jsonpAbruf()` löschte den Callback beim Zeitlimit per `delete`. Antwortet Apps
+Script erst danach, ruft das inzwischen geladene Script den Namen trotzdem auf — und findet
+nichts mehr. Der Callback wird jetzt **stillgelegt** (leere Funktion) und erst nach 30 Sekunden
+aufgeräumt.
+
+**Zweite Erkenntnis daraus:** Der erste Abgleich lief überhaupt ins Zeitlimit, weil Apps Script
+nach einer Ruhephase träge anläuft. Dann setzt `onlineBereit = false` die Sheet-Meldungen aus,
+bis der nächste Abgleich (3 min) klappt — selbstheilend, aber unnötig. `zeitlimitMs` darum von
+**6 auf 10 Sekunden**. Das Rad selbst war nie betroffen, der Abgleich läuft nebenher.
+
+Gegenprobe nach dem Fix: Overlay 1080×1920 sichtbar, QR 238 px im Bild, **keine JS-Fehler**.
+
+## 03.09.2026 — Kundendokument nachgezogen
+
+`Bruesch-Gluecksrad-Uebersicht.docx` (plus datierte Kopie `…-2026-09-03.docx`):
+
+- **Abschnitt 2:** statt «Samstag» und «Freitag und Sonntag» nun **drei Tabellen je Messetag**.
+  Die Klick-Szenarien richten sich nach der Öffnungsdauer — Fr 60/100/150 · Sa 150/250/400 ·
+  So 100/150/250. Zahlen neu simuliert, je 500 Messetage (vorher stand „20" im Dokument).
+- **Abschnitt 3:** Sperre je Messetag mit Nachweis statt «ab dem 151. Klick» für alle Tage.
+- **Abschnitt 5:** zusätzlich die Beamer-Adresse.
+
+⚠️ **Die PDF muss der User selbst neu erzeugen** — hier ist kein Rendern möglich: kein
+LibreOffice, kein pandoc, und AppleScript auf Word/Pages scheitert an der fehlenden
+macOS-Automation-Berechtigung (Word: Timeout, Pages: «Verbindung ungültig»). Der Versuch liess
+eine Word-Sperrdatei `~$…docx` im Ordner liegen.
+
+**Ersatzprüfung fürs Layout:** Spaltenbreiten aufsummieren gegen die nutzbare Textbreite
+(**17,19 cm**). ⚠️ `table.add_column()` erbt die Breite der letzten Spalte — die Tabelle war
+damit 22,9 cm breit und lief über den Rand; danach `tblGrid` **und** jede Zellenbreite neu
+setzen. Neue Zellen erben kein Format → `tcPr` und den Absatz von einer Nachbarzelle
+deepcopy'en (grüne Kopfzeile `2E7D33`).

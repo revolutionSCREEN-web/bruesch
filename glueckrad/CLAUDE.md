@@ -26,22 +26,32 @@ Bewegung eine Taste (**Enter / Code 13**) sendet → das Rad dreht.
 
 ```
 index.html          Anzeige-Seite (Hochformat ist Ziel-Modus)
+                    ?zuschauer=1  → Beamer/Zweitbildschirm · ?debug=1 → Protokoll
 admin.html          Preise/Mengen eintragen, preise.txt erzeugen, Bestandsübersicht, Reset
 form.html           Handy-Formular, das der QR-Code öffnet (Lead-Erfassung)
-config.js           >>> EINZIGE Stelle für Branding, Segmente, Preise, Sensor, Timings, Lead
-google-apps-script.gs   ins Google Sheet einfügen (schreibt die Leads)
+config.js           >>> EINZIGE Stelle für Branding, Segmente, Preise, Sensor, Timings,
+                    Lead, Ausspiel-Steuerung, Radspiegel
+preise.txt          Preise + Mengen im Klartext (wird beim Start geladen; config.js = Fallback)
+google-apps-script.gs   ins Google Sheet einfügen (Leads + Blatt „Ausgaben")
 css/
   reset.css · easywheel.css   Original (nicht anfassen)
-  signage.css       Layout (Querformat), Video-Hintergrund, Overlay, Attract, Countdown
+  signage.css       Layout, Overlay, Attract, Countdown, Zuschauer-Modus
+                    ⚠️ mit Tizen-4.0-Fallbacks (20 Stellen, siehe Stolperfalle 4)
 js/
   jquery*.js · jquery.easywheel.min.js   Original-Plugin (nicht anfassen)
   qrcode.min.js     QR-Erzeugung, offline (public domain)
-  marine-bg.js      animierter Canvas-Hintergrund (Radar/Wind/Leuchtturm) + Freeze/Resume
+  marine-bg.js      animierter Canvas-Hintergrund + Freeze/Resume (hier nicht aktiv)
   app.js            Steuerlogik: Sensor, Drehung, Overlay, Attract, QR/Lead, Countdown
-  ausspielung.js    Kontingente, Streckung, gewichtete Ziehung, Sheet-Abgleich
+  ausspielung.js    Kontingente, Streckung, gewichtete Ziehung, Hauptpreis, Sheet-Abgleich
+  spiegel.js        Radspiegel: sendet/empfängt die Drehungen (Beamer)
+  sensorhub*.js     Sensor-Hub-Anbindung (gebaut, hier NICHT aktiv)
 assets/
-  images/oceanpilot-logo.svg · oceanpilot-mark.svg   Branding
+  images/bruesch-logo-weiss.png (Wortmarke oben) · bruesch-mark.png («B» in der Nabe)
   media/tick.mp3 · fonts/lato-*.woff2
+Bruesch-Gluecksrad-Uebersicht*.docx   Kundendokument (siehe Config-Abschnitt)
+STAND-2026-09-03.md · MEMORY.md       Übergabestand · Verlauf und Begründungen
+
+../radspiegel-worker/   Cloudflare Worker für die Beamer-Übertragung (eigenes README)
 ```
 
 **Regel:** Kundenspezifisches immer in `config.js`. `js/app.js` nur für Logik ändern,
@@ -72,6 +82,11 @@ nie Branding/Texte hineinschreiben. Original-Plugin-Dateien nicht editieren.
   bei null.** Alles über JSONP (Apps Script setzt keine CORS-Kopfzeilen); nichts blockiert die
   Anzeige. Antwortet das Sheet nicht, gilt die lokale Zählung und die Meldungen setzen aus, bis
   ein Abgleich wieder klappt.
+
+- **Radspiegel** (`js/spiegel.js`, seit 03.09.2026): Die Anzeige am Stand meldet jede Drehung
+  über einen Cloudflare-Dienst; `index.html?zuschauer=1` spielt sie auf einem Beamer oder
+  zweiten Bildschirm gleichzeitig ab (55–77 ms Versatz). Der Zuschauer bedient nichts, zählt
+  nichts und zeigt keinen QR. Das Rad am Stand ist davon unabhängig.
 
 ## Technische Stolperfallen (unbedingt beachten)
 
@@ -172,7 +187,7 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
   als Web-App bereitstellen (Ausführen als: Ich · Zugriff: Jeder), URL in `config.js`
   unter `lead.scriptUrl`. Schritt für Schritt: README Abschnitt 4.
 
-## Aktuelle Config-Werte (Stand 02.09.2026 — Brüesch, Gewerbeausstellung Fr–So)
+## Aktuelle Config-Werte (Stand 03.09.2026 — Brüesch, Hofdere 2026, Fr–So)
 
 - **6 Segmente** (in dieser Reihenfolge): Hauptpreis Kinogutschein CHF 100.– (`HAUPTPREIS`, 1/1/1,
   Sperre je Tag: Fr ab Klick 61, Sa ab 151, So ab 101) ·
@@ -231,12 +246,22 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
 
 ## Offen
 
-- **Live-Test am QB24T** vor Messebeginn: Sensor-Auslösung (Fokus, `?debug=1`), Ergebnisfenster
-  und QR am echten Tizen-Display, Tick-Sound (Autoplay). Am 03.09. war das Rad am Stand
-  installiert und reagierte auf den Buzzer; dabei fiel der Hauptpreis-Fehler auf (Stolperfalle 8).
-- **Am Messemorgen prüfen:** Datum/Uhrzeit des Displays. `?debug=1` muss «Messetag …» zeigen.
-- **User:** Test-Zeilen im Google Sheet („Leads") aus der Entwicklung löschen.
-- **Hinweis:** `config.js` (mit `scriptUrl`) liegt im ÖFFENTLICHEN Repo/Pages — die Apps-Script-URL
-  ist einsehbar. Das Script nimmt nur `doPost` an; bei Missbrauch neu bereitstellen (neue URL).
-- Bestandszählung ist geräte-lokal. Wer die Zahlen zentral braucht, müsste sie an das Apps-Script
-  (oder einen kleinen Endpoint) melden — bewusst nicht gebaut, damit das Rad offline bleibt.
+- ⏸️ **Feldtest am QB24T abschliessen.** Am 03.09. war das Rad am Stand installiert, der Buzzer
+  löste aus und das Ergebnisfenster erschien (dabei fiel Stolperfalle 8 auf). Noch offen: QR am
+  echten Display, Tick-Sound (Autoplay), und der Radspiegel **mit dem Display als Sender** — der
+  ist bisher nur zwischen zwei Desktop-Browsern geprüft. Blockiert das WLAN ausgehende
+  `wss`-Verbindungen, bleibt der Beamer stehen; das Rad läuft unbeeinflusst weiter.
+- ⚠️ **Vor Messebeginn am Display: hart neu laden.** Sonst läuft dort die alte Fassung mit dem
+  Hauptpreis-Fehler weiter.
+- ⚠️ **Am Messemorgen prüfen:** Datum/Uhrzeit des Displays. `?debug=1` muss «Messetag …» zeigen.
+- ⚠️ **Testdrehungen an einem Messetag zählen mit** (Kontingent + Sheet) und senken die
+  Hauptpreis-Schwelle entsprechend. Zum Testen lieber einen Nicht-Messetag nehmen — dort wird
+  weder verbucht noch gemeldet und der Hauptpreis ist gesperrt.
+- **User:** PDF aus dem aktualisierten Word neu erzeugen; Testzeilen im Google Sheet löschen
+  (Blatt „Ausgaben": Gerät `TEST-Pruefung` und die Zeilen vom 03.09.; Blatt „Leads": die leere
+  Zeile vom `Run`-Versuch und die Juli-Testzeilen).
+- **Hinweis:** `config.js` (mit `scriptUrl` und der Spiegel-Adresse) liegt im ÖFFENTLICHEN
+  Repo/Pages. Bei Missbrauch das Apps Script neu bereitstellen (neue URL) und beide
+  `scriptUrl`-Stellen anpassen; den Spiegel notfalls mit `spiegel.enabled: false` abschalten.
+- Sensor-Hub-Anbindung bleibt aus (`sensorHub.enabled:false`); über https ohnehin blockiert
+  (Mixed Content).
