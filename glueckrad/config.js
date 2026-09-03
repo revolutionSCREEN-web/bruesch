@@ -74,9 +74,19 @@ window.GLUECKSRAD_CONFIG = {
     },
 
     // HAUPTPREIS (Kinogutschein CHF 100.–, einer pro Tag):
-    // Er ist für die ersten 150 Drehungen des Tages GESPERRT und kann damit
-    // frühestens beim 151. Klick auf den Buzzer fallen.
-    hauptpreisAbKlick: 150,
+    // Für die ersten N Drehungen des Tages GESPERRT – der Gutschein kann also
+    // frühestens beim (N+1)-ten Klick auf den Buzzer fallen.
+    //
+    // JE MESSETAG, weil die Ausstellung unterschiedlich lange offen ist:
+    //   Freitag  17–21 Uhr  =  4 h  →  60 Klicks  = 15 Drehungen/Stunde
+    //   Samstag  10–21 Uhr  = 11 h  → 150 Klicks  = 14 Drehungen/Stunde
+    //   Sonntag  10–17 Uhr  =  7 h  → 100 Klicks  = 14 Drehungen/Stunde
+    // So ist an jedem Tag dieselbe Besucherfrequenz nötig. Eine für alle Tage
+    // gleiche 150er-Sperre hätte am kurzen Freitagabend 38 Drehungen/Stunde
+    // verlangt – der Gutschein wäre dort mit grosser Wahrscheinlichkeit gar
+    // nicht ausgespielt worden.
+    // (Eine einzelne Zahl statt des Objekts gilt weiterhin für alle Tage.)
+    hauptpreisAbKlick: { '5': 60, '6': 150, '0': 100 },
 
     // Chance je Klick, sobald die Sperre vorbei ist. 0.2 = jeder fünfte Klick,
     // der Gutschein fällt also im Schnitt fünf Klicks nach der Sperre – mal
