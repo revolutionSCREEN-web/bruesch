@@ -345,7 +345,14 @@
     function schluss(daten) {
       if (erledigt) return;
       erledigt = true;
-      try { delete global[name]; } catch (e) { global[name] = undefined; }
+      // NICHT löschen, sondern stilllegen: Antwortet das Sheet erst nach dem
+      // Zeitlimit, ruft das nachgeladene Script den Namen trotzdem auf. Ein
+      // gelöschter Callback gäbe dann einen Fehler («… is not defined»).
+      // Nach einer Schonfrist wird der leere Platzhalter aufgeräumt.
+      global[name] = function () {};
+      global.setTimeout(function () {
+        try { delete global[name]; } catch (e) { global[name] = undefined; }
+      }, 30000);
       if (script.parentNode) script.parentNode.removeChild(script);
       fertig(daten);
     }
@@ -353,7 +360,7 @@
     script.src = url + (url.indexOf('?') < 0 ? '?' : '&') + 'callback=' + name;
     script.onerror = function () { schluss(null); };
     (global.document.body || global.document.documentElement).appendChild(script);
-    global.setTimeout(function () { schluss(null); }, zeitlimit || 6000);
+    global.setTimeout(function () { schluss(null); }, zeitlimit || 10000);
   }
 
   /* --- Eine Ausgabe ans Sheet melden (feuern und vergessen) ------------- */

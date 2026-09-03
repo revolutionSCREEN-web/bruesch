@@ -128,7 +128,9 @@ window.GLUECKSRAD_CONFIG = {
       enabled:    true,
       scriptUrl:  'https://script.google.com/macros/s/AKfycbyQ076w0zb5L0jh1DZRNPZP3V3ZBhIti5fGCZpOoGAbT7WxcD64RoUQthMSxnsDPgBx/exec',
       geraet:     'Display Messestand',   // erscheint im Sheet, falls mehrere Räder laufen
-      zeitlimitMs: 6000,                  // danach gilt einfach der lokale Stand
+      zeitlimitMs: 10000,                 // danach gilt einfach der lokale Stand.
+                                          // 10 s, weil Apps Script nach einer Ruhephase
+                                          // beim ersten Aufruf träge anläuft.
       abgleichAlleMs: 180000              // Leerlauf-Abgleich alle 3 Minuten
     }
   },
