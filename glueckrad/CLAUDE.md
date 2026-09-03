@@ -125,6 +125,12 @@ nie Branding/Texte hineinschreiben. Original-Plugin-Dateien nicht editieren.
    Messetag (…) – Hauptpreis gesperrt». Steht dort «kein Messetag», obwohl Messe ist, geht
    die **Uhr des Displays falsch**: dann greifen weder Kontingente noch Sheet-Meldung.
 
+10. **`hauptpreisAbKlick` ist je Wochentag gestaffelt** (`{ '5': 60, '6': 150, '0': 100 }`,
+    `sperreFuerTag()`). Grund: 4 h Ausstellung am Freitag gegen 11 h am Samstag — eine
+    einheitliche Sperre trifft die Tage völlig unterschiedlich hart. Eine einzelne Zahl gilt
+    weiterhin für alle Tage. **Bei einer neuen Aktion die Sperre immer an der Öffnungsdauer
+    ausrichten**, nicht pauschal setzen: Faustregel ~14 Drehungen pro Öffnungsstunde.
+
 ## Testen (headless)
 
 Es gibt keine Testdateien im Repo — Playwright-Skripte im Scratchpad erzeugen. Muster:

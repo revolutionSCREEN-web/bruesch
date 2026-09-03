@@ -268,3 +268,29 @@ greifen.
   einmal pro Tag.
 - Live am Deploy (Playwright, 1080×1920): acht Drehungen, kein Hauptpreis, Ergebnisfenster
   und QR wie erwartet; `?debug=1` bestätigt «kein Messetag … Hauptpreis gesperrt».
+
+
+## 03.09.2026 — Sind 150 Klicks pro Tag realistisch? (Prüfung, Sperre gestaffelt)
+
+Frage des Users nach dem Hauptpreis-Fehler. Ergebnis: **Die Schwelle ist scharf** — unter 151
+Drehungen fällt der Gutschein nie, bei 160 zu 87 %, ab 170 praktisch sicher (je 2000 simulierte
+Tage). Es kommt also allein darauf an, ob ~170 Drehungen zusammenkommen.
+
+**Der Freitag war das Problem.** Öffnungszeiten laut hofdere2026.ch (mit der `config.js`
+abgeglichen, stimmen exakt): Fr 17–21 (4 h), Sa 10–21 (11 h), So 10–17 (7 h). Für 151 Klicks
+brauchte es damit Fr **38/h**, Sa 14/h, So 22/h. Ein Durchgang belegt das Rad 22 s
+(8 s Drehung + 15 s Ergebnisfenster) → technisch ~165/h; der Freitag hätte also ein Viertel
+Dauerauslastung über vier Stunden gebraucht.
+
+Messe: **Hofdere 2026, Südiareal Hochdorf, 130 Aussteller**, Comeback nach 13 Jahren,
+«grösste Gewerbeausstellung des Seetals». Keine offiziellen Besucherprognosen. Vergleichswerte:
+Gossau 130 Aussteller/4 Tage ≈ 40'000, Iheimisch Nidwalden > 25'000, Turbenthal 4'000. Bei
+8'000–20'000 Besuchern über drei Tage müssten am Stand drehen: Fr 4–9 %, Sa 1,5–4 %, So 2,5–6 %.
+
+**Entscheid des Users: Sperre je Tag** — `hauptpreisAbKlick: { '5': 60, '6': 150, '0': 100 }`,
+gelesen über `sperreFuerTag()` (Zahl weiterhin erlaubt = für alle Tage gleich). Damit ist
+überall dieselbe Frequenz nötig, ~14–15 Drehungen/Stunde. Geprüft mit je 500 simulierten Tagen
+pro Stufe: Fr ab Klick 61, Sa ab 151, So ab 101, nie mehr als einer pro Tag; Kontingente auch
+bei 1200 Drehungen exakt eingehalten (Fr 100/50/50, Sa 200/100/100, So 100/50/50).
+
+⚠️ Das Kundendokument nennt noch «ab dem 151. Klick» für alle Tage.
