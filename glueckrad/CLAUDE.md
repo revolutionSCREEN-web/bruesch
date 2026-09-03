@@ -167,7 +167,7 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
 ## Aktuelle Config-Werte (Stand 02.09.2026 — Brüesch, Gewerbeausstellung Fr–So)
 
 - **6 Segmente** (in dieser Reihenfolge): Hauptpreis Kinogutschein CHF 100.– (`HAUPTPREIS`, 1/1/1,
-  erst ab dem 151. Klick des Tages) ·
+  Sperre je Tag: Fr ab Klick 61, Sa ab 151, So ab 101) ·
   Kugelschreiber (100/200/100) · Trinkflasche (50/100/50) · GreenTEA (unbegrenzt, Trostpreis) ·
   Kühl-/Wärme-Pad (50/100/50) · Niete „Auf ein neues Glück".
 - **Preise + Mengen bearbeiten = `preise.txt`** oder bequemer **`admin.html`**. Format je Zeile:
@@ -176,10 +176,12 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
   fehl (z. B. `file://`), gelten die `segments` aus `config.js` — die also synchron halten.
 - **`ausspielung`-Block in config.js:** `tage` = Öffnungszeiten (Fr 17–21, Sa 10–21, So 10–17,
   Schlüssel 0=So/5=Fr/6=Sa) · `teilnehmerProTag: 150` (steuert die Hauptpreis-Chance) ·
-  **`hauptpreisAbKlick: 150`** (Gutschein für die ersten 150 Drehungen des Tages gesperrt →
-  frühestens der 151. Klick löst ihn aus) · **`hauptpreisChance: 0.2`** (danach 20 % je Klick,
-  fällt im Schnitt bei Klick 155, damit niemand mitzählen kann). ⚠️ Kommen an einem Tag weniger
-  als 151 Klicks zusammen, wird an diesem Tag KEIN Gutschein ausgespielt — so gewollt.
+  **`hauptpreisAbKlick: { '5': 60, '6': 150, '0': 100 }`** (Sperre je Wochentag, gelesen über
+  `sperreFuerTag()`; eine einzelne Zahl gilt für alle Tage → Fr ab Klick 61, Sa ab 151, So ab 101,
+  überall rund 14–15 Drehungen pro Öffnungsstunde nötig) · **`hauptpreisChance: 0.2`** (danach
+  20 % je Klick, fällt im Schnitt fünf Klicks nach der Sperre, damit niemand mitzählen kann).
+  ⚠️ Kommen an einem Tag weniger Drehungen zusammen als die Sperre verlangt, wird an diesem Tag
+  KEIN Gutschein ausgespielt — so gewollt.
   `nietenAnteil: 0.10` · `streckPuffer: 0.15` (wie weit die Ausgabe dem Zeitplan vorauslaufen darf,
   bevor gebremst wird) · `gewichtUnbegrenzt: 50` (Gewicht des Trostpreises).
   **`enabled: false`** schaltet die ganze Steuerung ab → wieder reiner Zufall wie früher.
@@ -196,15 +198,28 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
 - **Feld-Texte = radial**, `.eWheel-txt>div{text-align:center; padding-left:6%}`.
 - **Aufruf-Text** (`messages.cta`, im Leerlauf sichtbar) = **«Drücken Sie den Buzzer»**
   (seit 02.09.2026; vorher «Näher treten – das Rad dreht von selbst»).
-- **Kundendokument** `Bruesch-Gluecksrad-Uebersicht.docx` (+ PDF): Preise/Mengen je Tag, erwartete
-  Ausspielung bei 150/200/300 Klicks, Hauptpreis-Regel, Funktionsweise. Bei Preisänderungen
-  mitziehen. Erzeugt mit `python-docx` (venv im Scratchpad, kein LibreOffice auf dem Mac →
-  Layout wurde nicht gerendert, nur der Inhalt geprüft).
+- **Kundendokument** `Bruesch-Gluecksrad-Uebersicht.docx` (+ PDF): Preise/Mengen je Tag,
+  erwartete Ausspielung je Messetag (Klick-Szenarien an der Öffnungsdauer ausgerichtet:
+  Fr 60/100/150 · Sa 150/250/400 · So 100/150/250), Sperre je Tag, Funktionsweise, beide
+  Adressen (Display + Beamer). **Bei Preis-, Mengen- oder Regeländerungen mitziehen.**
+  Bearbeitet mit `python-docx` (venv im Scratchpad).
+  ⚠️ **Layout ist hier nicht rendernd prüfbar:** kein LibreOffice, kein pandoc, und die
+  AppleScript-Steuerung von Word/Pages scheitert (Timeout bzw. „Verbindung ungültig" — dem
+  Terminal fehlt die macOS-Automation-Berechtigung). Ersatzprüfung: Spaltenbreiten aufsummieren
+  und gegen die nutzbare Textbreite halten — **17,19 cm** (Letter 21,6 cm minus 2×2,2 cm Rand).
+  `table.add_column()` übernimmt die Breite der letzten Spalte, sprengt also die Seite; danach
+  `tblGrid` **und** jede Zellenbreite neu setzen. Neue Zellen erben kein Format → `tcPr` und
+  den Absatz von einer Nachbarzelle deepcopy'en (grüne Kopfzeile `2E7D33`).
+  ⚠️ Word hält nach dem Öffnen eine Sperrdatei `~$…docx` im Ordner; die verschwindet erst,
+  wenn der User das Dokument in Word schliesst. Die PDF erzeugt der User selbst aus dem Word.
 - `behavior`: Trigger Code 13, `spinDurationMs` 8000, `overlayAutoCloseMs` 15000 (+Countdown),
   `loseAutoCloseMs` 3000, `cooldownMs` 12000, `idleWatchdogMs` 40000, `attractMode` true,
   `sound` true, `debug` false.
 - `lead.formUrl` = Pages-`form.html`, `lead.scriptUrl` = Apps-Web-App im Sheet
   `1N7A7y…szjHA`. QR erscheint nur bei Gewinn.
+- **`spiegel`-Block:** `enabled: true`, `wsUrl` = `wss://bruesch-radspiegel.patrick-buch3r.workers.dev/kanal`,
+  `raum: 'bruesch'`, plus die beiden Zuschauer-Texte (`zuschauerCta`, `zuschauerHinweis`).
+  `enabled: false` schaltet die Übertragung aus.
 
 ## Offen
 
