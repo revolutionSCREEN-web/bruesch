@@ -110,6 +110,21 @@ nie Branding/Texte hineinschreiben. Original-Plugin-Dateien nicht editieren.
    setzt das Script serverseitig. Solange `lead.scriptUrl` leer ist, blendet das Rad den
    QR aus und das Formular zeigt einen Setup-Hinweis.
 
+8. ⚠️⚠️ **Der Hauptpreis darf auf KEINEM Zufalls-Pfad fallen** (03.09.2026, am Messestand
+   passiert). Der Aufbau war an einem Donnerstag; der steht in `ausspielung.tage` nicht, also
+   lieferte `tagesplan()` `null` und `ziehe()` fiel auf reinen Zufall über alle Felder zurück —
+   der Kinogutschein kam beim ersten Buzzer-Druck, und beim zweiten gleich noch einmal.
+   Es gibt **drei** solche Zufalls-Pfade, alle laufen jetzt über `zufallOhneHauptpreis()`:
+   kein Messetag hinterlegt (auch bei falschem Gerätedatum), `ausspielung.enabled:false`,
+   und der Notfall-Fallback in `app.js`, wenn `ausspielung.js` fehlt.
+   **Beim Erweitern gilt:** Ein Fallback darf bei Sachpreisen grosszügig sein, den Hauptpreis
+   muss er ausschliessen — der Zufalls-Zweig ist genau der Pfad, den man beim Testen zuerst
+   trifft. `verbuche()` meldet aus demselben Grund nur an Messetagen ans Google Sheet.
+9. **Debug am Display ohne Deploy:** `index.html?debug=1` (neben `behavior.debug`). Das
+   Protokoll nennt den Grund jeder Ziehung — «Messetag 2026-09-04, Klick 37» oder «kein
+   Messetag (…) – Hauptpreis gesperrt». Steht dort «kein Messetag», obwohl Messe ist, geht
+   die **Uhr des Displays falsch**: dann greifen weder Kontingente noch Sheet-Meldung.
+
 ## Testen (headless)
 
 Es gibt keine Testdateien im Repo — Playwright-Skripte im Scratchpad erzeugen. Muster:
@@ -175,8 +190,10 @@ prüfen, `instance.currentSlice` auslesen. Video-Autoplay:
 
 ## Offen
 
-- **Live-Test am QB24T** vor Messebeginn: Sensor-Auslösung (Fokus, `debug:true`), Ergebnisfenster
-  und QR am echten Tizen-Display, Tick-Sound (Autoplay).
+- **Live-Test am QB24T** vor Messebeginn: Sensor-Auslösung (Fokus, `?debug=1`), Ergebnisfenster
+  und QR am echten Tizen-Display, Tick-Sound (Autoplay). Am 03.09. war das Rad am Stand
+  installiert und reagierte auf den Buzzer; dabei fiel der Hauptpreis-Fehler auf (Stolperfalle 8).
+- **Am Messemorgen prüfen:** Datum/Uhrzeit des Displays. `?debug=1` muss «Messetag …» zeigen.
 - **User:** Test-Zeilen im Google Sheet („Leads") aus der Entwicklung löschen.
 - **Hinweis:** `config.js` (mit `scriptUrl`) liegt im ÖFFENTLICHEN Repo/Pages — die Apps-Script-URL
   ist einsehbar. Das Script nimmt nur `doPost` an; bei Missbrauch neu bereitstellen (neue URL).

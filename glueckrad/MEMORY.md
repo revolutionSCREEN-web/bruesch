@@ -202,3 +202,69 @@ darunter der Bestand **aus dem Google Sheet**, je Messetag wählbar, plus Reset 
 - Aufruf-Text `messages.cta` → **«Drücken Sie den Buzzer»**.
 - `preise.txt` hat eine **5. Spalte** (`Mengen Fr/Sa/So`) und die ART `HAUPTPREIS`.
 - Kundendokument `Bruesch-Gluecksrad-Uebersicht.docx` (+ vom User erzeugte PDF).
+
+---
+
+## ⚠️⚠️ 03.09.2026 abends — Hauptpreis fiel beim Aufbau sofort, und zweimal
+
+**Beobachtung des Users:** Rad am Messestand installiert, Buzzer gedrückt → sofort der
+Hauptpreis (Kinogutschein CHF 100.–), obwohl er erst ab dem 151. Klick fallen darf. Zweiter
+Druck → nochmals der Hauptpreis.
+
+**Ursache — der Nicht-Messetag-Fallback.** Der Aufbau war am **Donnerstag**, in
+`ausspielung.tage` stehen aber nur Freitag (`'5'`), Samstag (`'6'`) und Sonntag (`'0'`).
+`tagesplan()` lieferte damit `null`, und `ziehe()` fiel auf die Zeile
+
+```js
+if (!plan) return Math.floor(Math.random() * segs.length);   // ALT
+```
+
+zurück — **reiner Zufall über ALLE sechs Felder, Hauptpreis eingeschlossen**, ohne
+150-Klick-Sperre und ohne die Begrenzung auf einen pro Tag. Bei sechs Feldern also 1/6 je
+Druck; zweimal hintereinander hat eine Wahrscheinlichkeit von 1/36 (2,8 %) — unglücklich,
+aber kein Zusatzfehler. Gegenprobe mit der alten Fassung: 5000 Klicks an einem Donnerstag →
+**894× Hauptpreis (17,9 %)**.
+
+Der Fallback war als Bequemlichkeit gedacht («Testlauf am Mittwoch soll trotzdem etwas
+zeigen») und hat dabei genau die Regel ausgehebelt, die er nicht anfassen durfte.
+
+**Fix (HEAD `1ed15d4`, live):** Neue Hilfsfunktion `zufallOhneHauptpreis()`. Der Hauptpreis
+kann jetzt auf **keinem** der drei Zufalls-Pfade mehr fallen:
+
+1. kein Messetag hinterlegt (auch bei **falsch gestelltem Datum am Display**),
+2. Steuerung per `ausspielung.enabled: false` abgeschaltet,
+3. `ausspielung.js` gar nicht geladen (Notfall-Fallback in `app.js` → `ohneHauptpreis()`).
+
+Der Hauptpreis fällt damit ausschliesslich über den dafür gebauten Block in `ziehe()` —
+Messetag + Klicksperre + Tagesmenge.
+
+**Ebenfalls geändert:** `verbuche()` meldet nur noch **an Messetagen** ans Google Sheet.
+Vorher wanderte jeder Testklick vom Aufbau ins Blatt «Ausgaben» (verbucht wurde er lokal
+schon vorher nicht).
+
+**Regel für alle künftigen Instanzen:** Ein Fallback darf grosszügig sein, was die
+*Sachpreise* angeht — den *Hauptpreis* darf er nie ausspielen. Der Zufalls-Zweig ist genau
+der Pfad, den man beim Testen zuerst trifft.
+
+### Neu: Debug per Adresse (HEAD `9f981d8`)
+
+`index.html?debug=1` blendet das Protokoll ein, ohne `config.js` anzufassen und neu zu
+deployen. Es nennt jetzt auch den Grund der Ziehung, z. B.
+
+```
+Ziel: 5 (Auf ein neues Glück) · kein Messetag (2026-09-03, Wochentag 4) – Hauptpreis gesperrt
+Ziel: 1 (Kugelschreiber) · Messetag 2026-09-04, Klick 37
+```
+
+Damit ist am Display **sofort sichtbar, ob Datum und Uhrzeit stimmen** — steht dort «kein
+Messetag», obwohl Messe ist, geht das Gerät falsch und weder Kontingente noch Hauptpreis
+greifen.
+
+### Geprüft
+
+- Headless (`scratchpad/pruefe-hauptpreis.js`): Donnerstag 5000 Klicks → 0× Hauptpreis ·
+  Freitag 150 Klicks → 0× · Freitag 400 Klicks → genau 1× · `enabled:false` 5000 Klicks → 0×.
+- 20 Messetage simuliert: frühester Hauptpreis Klick **151**, spätester 172, nie mehr als
+  einmal pro Tag.
+- Live am Deploy (Playwright, 1080×1920): acht Drehungen, kein Hauptpreis, Ergebnisfenster
+  und QR wie erwartet; `?debug=1` bestätigt «kein Messetag … Hauptpreis gesperrt».
