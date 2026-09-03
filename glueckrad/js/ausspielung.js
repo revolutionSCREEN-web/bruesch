@@ -98,6 +98,24 @@
     return (typeof m === 'number' && isFinite(m)) ? m : null;
   }
 
+  /* --- Notfall-Zufall: alles AUSSER dem Hauptpreis -----------------------
+     Überall dort, wo ohne Steuerung gezogen wird – Steuerung abgeschaltet,
+     kein Messetag hinterlegt, Gerätedatum falsch, Fehler – darf der
+     Hauptpreis NIEMALS fallen. Sonst kommt der Kinogutschein schon beim
+     ersten Testklick, und beliebig oft dazu.
+     (Genau das ist am 03.09.2026 beim Aufbau passiert: Donnerstag steht in
+     `tage` nicht, also griff der Zufall über ALLE Felder – zweimal
+     hintereinander der Hauptpreis.)                                        */
+  function zufallOhneHauptpreis(segs) {
+    var erlaubt = [];
+    for (var i = 0; i < segs.length; i++) if (!segs[i].hauptpreis) erlaubt.push(i);
+    if (!erlaubt.length) return -1;
+    return erlaubt[Math.floor(Math.random() * erlaubt.length)];
+  }
+
+  // Warum wurde so gezogen? Wird von app.js ins Debug-Protokoll geschrieben.
+  var letzterGrund = '';
+
   /* =======================================================================
      KERN: Welches Segment darf gewinnen?
      Liefert den Index in cfg.segments.
@@ -117,17 +135,25 @@
       return nietenIdx[Math.floor(Math.random() * nietenIdx.length)];
     }
 
-    // Steuerung aus? Dann rein zufällig über alle Felder (Verhalten wie früher).
-    if (a.enabled === false) return Math.floor(Math.random() * segs.length);
+    // Steuerung aus? Dann rein zufällig – aber OHNE Hauptpreis, der bleibt
+    // immer der Steuerung vorbehalten.
+    if (a.enabled === false) {
+      letzterGrund = 'Steuerung abgeschaltet (enabled:false) – Zufall ohne Hauptpreis';
+      return zufallOhneHauptpreis(segs);
+    }
 
     var plan = tagesplan(cfg, jetzt);
     if (!plan) {
-      // Kein Messetag hinterlegt (z. B. Testlauf am Mittwoch): alles erlaubt,
-      // aber nichts wird vom Kontingent abgebucht.
-      return Math.floor(Math.random() * segs.length);
+      // Kein Messetag hinterlegt (Testlauf beim Aufbau, oder das Display hat
+      // ein falsches Datum): Sachpreise ja, HAUPTPREIS NEIN. Abgebucht wird
+      // nichts, gemeldet wird auch nichts (siehe verbuche()).
+      letzterGrund = 'kein Messetag (' + heute + ', Wochentag ' + jetzt.getDay() +
+                     ') – Hauptpreis gesperrt, keine Verbuchung';
+      return zufallOhneHauptpreis(segs);
     }
 
     var anteil = zeitanteil(plan, jetzt);
+    letzterGrund = 'Messetag ' + heute + ', Klick ' + ((stand.drehungen || 0) + 1);
 
     /* --- 1) Grundrauschen Niete ---------------------------------------- */
     var nietenAnteil = (typeof a.nietenAnteil === 'number') ? a.nietenAnteil : 0;
@@ -205,14 +231,16 @@
     var stand = ladeBestand(heute);
     stand.datum = heute;
     stand.drehungen = (stand.drehungen || 0) + 1;
-    if (seg && seg.win && tagesplan(cfg, jetzt)) {
+    var istMessetag = !!tagesplan(cfg, jetzt);
+    if (seg && seg.win && istMessetag) {
       var k = schluessel(seg);
       stand.ausgegeben[k] = (stand.ausgegeben[k] || 0) + 1;
     }
     speichereBestand(stand);
-    // Zusätzlich ans Google Sheet. Bewusst gekapselt: Die lokale Zählung ist
-    // führend und darf NIE an der Meldung scheitern.
-    try { meldeAusgabe(cfg, seg, jetzt); } catch (e) {}
+    // Zusätzlich ans Google Sheet – aber NUR an Messetagen, sonst landen die
+    // Testklicks vom Aufbau im Blatt „Ausgaben". Bewusst gekapselt: Die lokale
+    // Zählung ist führend und darf NIE an der Meldung scheitern.
+    if (istMessetag) { try { meldeAusgabe(cfg, seg, jetzt); } catch (e) {} }
     return stand;
   }
 
@@ -370,6 +398,8 @@
 
   global.Ausspielung = {
     ziehe: ziehe,
+    grund: function () { return letzterGrund; },
+    zufallOhneHauptpreis: zufallOhneHauptpreis,
     verbuche: verbuche,
     synchronisiere: synchronisiere,
     standAusSheet: standAusSheet,

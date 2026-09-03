@@ -287,19 +287,31 @@
   }
 
   /* --- Ziel bestimmen: Ausspiel-Steuerung (Kontingent/Streckung) --------
-     Fällt die Steuerung aus (Datei fehlt, Fehler), wird echt zufällig
-     gezogen – das Rad läuft dann wie vor der Erweiterung weiter.          */
+     Fällt die Steuerung aus (Datei fehlt, Fehler), wird zufällig gezogen –
+     aber IMMER ohne den Hauptpreis. Der darf nur über die Steuerung fallen,
+     sonst kommt der Kinogutschein beim ersten Testklick.                   */
+  function ohneHauptpreis() {
+    var erlaubt = [];
+    for (var i = 0; i < CFG.segments.length; i++) {
+      if (!CFG.segments[i].hauptpreis) erlaubt.push(i);
+    }
+    if (!erlaubt.length) return 0;
+    return erlaubt[Math.floor(Math.random() * erlaubt.length)];
+  }
+
   function zieheZiel() {
     if (window.Ausspielung && CFG.ausspielung) {
       try {
         var i = window.Ausspielung.ziehe(CFG);
         if (typeof i === 'number' && i >= 0 && i < CFG.segments.length) {
-          dbg('Ziel: ' + i + ' (' + String(CFG.segments[i].name).replace(/<[^>]+>/g, ' ') + ')');
+          dbg('Ziel: ' + i + ' (' + String(CFG.segments[i].name).replace(/<[^>]+>/g, ' ') + ')' +
+              (window.Ausspielung.grund ? ' · ' + window.Ausspielung.grund() : ''));
           return i;
         }
       } catch (e) { dbg('Ausspielung-Fehler: ' + e.message); }
     }
-    return Math.floor(Math.random() * CFG.segments.length);
+    dbg('Steuerung nicht verfügbar – Zufall ohne Hauptpreis');
+    return ohneHauptpreis();
   }
 
   /* --- Rad-Winkel aus der Transform-Matrix lesen ------------------------ */
