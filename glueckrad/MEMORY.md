@@ -161,6 +161,10 @@ Enthalten:
 
 ### ⚠️ Hauptpreis-Regel (vom User präzisiert)
 
+> **Überholt seit dem 03.09.** — die Sperre ist inzwischen je Messetag gestaffelt
+> (Fr 60 · Sa 150 · So 100). Der folgende Absatz beschreibt den Stand vom 02.09.;
+> warum umgestellt wurde, steht weiter unten unter «Sind 150 Klicks pro Tag realistisch?».
+
 Der Kinogutschein CHF 100.– ist die **ersten 150 Drehungen des Tages gesperrt**
 (`hauptpreisAbKlick: 150`) und kann **frühestens beim 151. Klick** fallen, danach mit
 20 % je Klick gestreut (`hauptpreisChance: 0.2`, im Mittel Klick 155), damit niemand mitzählen
