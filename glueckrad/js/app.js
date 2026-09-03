@@ -82,13 +82,18 @@
     }
   }
 
-  /* --- Debug-Log am Bildschirm (nur wenn behavior.debug === true) --------
+  /* --- Debug-Log am Bildschirm ------------------------------------------
      Zeigt jede Taste + Reaktion mit Zeitstempel -> damit sichtbar ist, ob
-     das Sensor-"Enter" spät ankommt (Fokus/Sensor) oder sofort (dann Rendering). */
+     das Sensor-"Enter" spät ankommt (Fokus/Sensor) oder sofort (dann Rendering).
+     An über `behavior.debug: true` ODER – ohne die Datei anzufassen – über
+     die Adresse `index.html?debug=1`. Praktisch für den Test am Display:
+     das Protokoll nennt jetzt auch, ob das Rad den Tag als Messetag erkennt
+     (also ob Datum und Uhrzeit des Displays stimmen).                      */
   var dbgBox = null, lastKeyT = 0;
+  var DEBUG_URL = String(window.location.search || '').indexOf('debug=1') !== -1;
   function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
   function dbg(msg) {
-    if (!CFG.behavior || !CFG.behavior.debug) return;
+    if (!DEBUG_URL && (!CFG.behavior || !CFG.behavior.debug)) return;
     if (!dbgBox) {
       dbgBox = document.createElement('div');
       dbgBox.id = 'debug-log';
