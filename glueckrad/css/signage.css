@@ -386,3 +386,29 @@ body.attract .easywheel .eWheel {
     background: linear-gradient(180deg, rgba(7,20,42,.85), rgba(7,20,42,.35) 40%, rgba(7,20,42,.85));
   }
 }
+
+/* =========================================================================
+   RADSPIEGEL – Zuschauer-Bildschirm (Beamer)
+   Aufruf: index.html?zuschauer=1 · siehe js/spiegel.js
+   Alle Angaben bewusst klassisch: Der Tizen-Browser der Samsung-Displays ist
+   Chromium 56 und verwirft modernes CSS still.
+   ========================================================================= */
+
+/* Kein Mauszeiger auf dem Beamer */
+body.zuschauer { cursor: none; }
+
+/* Dezenter Punkt unten rechts: grün = Verbindung zum Stand steht.
+   Absichtlich klein und unauffällig – er ist für euch, nicht fürs Publikum. */
+#spiegel-status {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  width: 10px;
+  height: 10px;
+  border-radius: 50%;
+  background: #C0392B;          /* rot = getrennt */
+  opacity: 0.5;
+  z-index: 60;
+  transition: background-color 400ms ease;
+}
+#spiegel-status.ok { background: #88BF67; }   /* Brüesch-Hellgrün = verbunden */

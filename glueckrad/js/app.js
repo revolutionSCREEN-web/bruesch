@@ -91,6 +91,9 @@
      (also ob Datum und Uhrzeit des Displays stimmen).                      */
   var dbgBox = null, lastKeyT = 0;
   var DEBUG_URL = String(window.location.search || '').indexOf('debug=1') !== -1;
+  // Zuschauer-Modus (Beamer/Zweitbildschirm): zeigt nur mit, bedient nichts.
+  // Siehe js/spiegel.js. Aufruf: index.html?zuschauer=1
+  var ZUSCHAUER = String(window.location.search || '').indexOf('zuschauer=1') !== -1;
   function now() { return (window.performance && performance.now) ? performance.now() : Date.now(); }
   function dbg(msg) {
     if (!DEBUG_URL && (!CFG.behavior || !CFG.behavior.debug)) return;
@@ -354,8 +357,10 @@
     spinTimer = setTimeout(function () { onSpinComplete(index); }, dauer + 40);
   }
 
-  /* --- Auslöser (Bewegungssensor / Tap) --------------------------------- */
-  function trigger(src) {
+  /* --- Auslöser (Bewegungssensor / Tap) ---------------------------------
+     `zielIdx` wird nur im Zuschauer-Modus mitgegeben: Dort bestimmt nicht das
+     eigene Gerät das Ergebnis, sondern die Anzeige am Stand schickt es. */
+  function trigger(src, zielIdx) {
     if (locked || state !== 'ready') {          // nur aus Bereitschaft, kein Doppel-Trigger
       dbg('IGNORIERT (' + (src || '?') + ') – state=' + state + ' locked=' + locked);
       return;
@@ -371,7 +376,14 @@
     clearTimeout(cooldownTimer);
     cooldownTimer = setTimeout(returnToReady, CFG.behavior.cooldownMs);
     armWatchdog();
-    dreheZu(zieheZiel());                       // Ziel steht vorher fest (Ausspiel-Steuerung)
+    // Ziel steht VOR der Drehung fest (Ausspiel-Steuerung) – im Zuschauer-Modus
+    // kommt es fertig vom Stand.
+    var ziel = (typeof zielIdx === 'number') ? zielIdx : zieheZiel();
+    if (!ZUSCHAUER && window.Radspiegel) {
+      var feld = String((CFG.segments[ziel] || {}).name || '').replace(/<[^>]+>/g, ' ').trim();
+      window.Radspiegel.sendeDrehung(ziel, feld);   // an Beamer/Zweitbildschirme
+    }
+    dreheZu(ziel);
   }
 
   /* --- Ergebnis anzeigen ------------------------------------------------ */
@@ -384,7 +396,9 @@
     var seg = CFG.segments[idx] || {};
 
     // Ausgabe fürs Tageskontingent verbuchen (zählt nur an Messetagen mit).
-    if (window.Ausspielung && CFG.ausspielung) {
+    // Der Zuschauer-Bildschirm verbucht NICHTS – sonst wäre jede Ausgabe doppelt
+    // gezählt und im Google Sheet doppelt gemeldet.
+    if (!ZUSCHAUER && window.Ausspielung && CFG.ausspielung) {
       try { window.Ausspielung.verbuche(CFG, idx); } catch (e) { dbg('Verbuchen fehlgeschlagen: ' + e.message); }
     }
     var won = !!seg.win;
@@ -406,7 +420,12 @@
     qrBox.innerHTML = '';
     qrHint.textContent = '';
     var qrTarget = null;
-    if (won) {
+    // Auf dem Beamer bewusst KEIN QR-Code: Sonst könnte ihn jemand aus der
+    // Ferne abscannen, ohne selbst gedreht zu haben. Stattdessen ein Hinweis
+    // auf den Stand.
+    if (won && ZUSCHAUER) {
+      qrHint.textContent = (CFG.spiegel && CFG.spiegel.zuschauerHinweis) || '';
+    } else if (won) {
       if (seg.qr) {
         qrTarget = seg.qr;                                   // fester Link je Segment (Vorrang)
       } else if (CFG.lead && CFG.lead.enabled && CFG.lead.formUrl &&
@@ -537,6 +556,52 @@
     document.addEventListener('click', function () { grabFocus(); trigger('Tap/Klick'); }, true);
   }
 
+  /* --- Radspiegel: Übertragung auf Beamer/Zweitbildschirme ---------------
+     Am Stand wird nur gesendet (feuern und vergessen). Auf dem Zuschauer-
+     Bildschirm wird empfangen und dieselbe Drehung abgespielt.            */
+  function starteSpiegelSender() {
+    if (!window.Radspiegel) return;
+    window.Radspiegel.start(CFG, { protokoll: dbg });
+  }
+
+  function starteSpiegelEmpfang() {
+    if (!window.Radspiegel) { dbg('spiegel.js fehlt – Zuschauer-Modus ohne Verbindung'); return; }
+    var ok = window.Radspiegel.start(CFG, {
+      protokoll: dbg,
+      beiStatus: function (zustand) {
+        // Dezenter Punkt in der Ecke: grün = Verbindung zum Stand steht.
+        var el = document.getElementById('spiegel-status');
+        if (!el) {
+          el = document.createElement('div');
+          el.id = 'spiegel-status';
+          document.body.appendChild(el);
+        }
+        el.className = (zustand === 'verbunden') ? 'ok' : 'weg';
+        el.title = (zustand === 'verbunden') ? 'mit dem Stand verbunden' : 'keine Verbindung zum Stand';
+      },
+      beiNachricht: function (daten) {
+        if (daten.typ !== 'dreh') return;
+        var idx = daten.idx;
+        // Sicherheitsnetz: Stimmt die Preisliste hier nicht mit der am Stand
+        // überein (z. B. preise.txt geändert, Seite nicht neu geladen), wird
+        // das Feld über den Namen gesucht statt blind über die Nummer.
+        if (daten.feld) {
+          var hier = String((CFG.segments[idx] || {}).name || '').replace(/<[^>]+>/g, ' ').trim();
+          if (hier !== daten.feld) {
+            for (var i = 0; i < CFG.segments.length; i++) {
+              var n = String(CFG.segments[i].name || '').replace(/<[^>]+>/g, ' ').trim();
+              if (n === daten.feld) { idx = i; break; }
+            }
+            dbg('Preisliste weicht ab – Feld über den Namen gesucht: ' + daten.feld);
+          }
+        }
+        if (typeof idx !== 'number' || idx < 0 || idx >= CFG.segments.length) return;
+        trigger('Stand', idx);
+      }
+    });
+    if (!ok) dbg('Spiegel in config.js nicht eingeschaltet (spiegel.enabled/wsUrl)');
+  }
+
   /* --- Start ------------------------------------------------------------- */
   $(function () {
     // Zuerst die Preise aus preise.txt holen (Fallback = Segmente aus config.js),
@@ -544,14 +609,27 @@
     loadPrizes(function () {
       applyBranding();
       initWheel();
-      if (document.body) document.body.tabIndex = -1;   // Body fokussierbar machen
-      bindInputs();
-      grabFocus();
-      setInterval(grabFocus, 2000);                     // Fokus periodisch nachfassen
-      document.addEventListener('visibilitychange', function () { if (!document.hidden) grabFocus(); });
-      dbg('Bereit. Auslöser-Taste = Code ' + CFG.behavior.triggerKeyCode);
+      if (ZUSCHAUER) {
+        // Zweitbildschirm/Beamer: keine Tasten, kein Sensor, kein Sheet-Abgleich.
+        // Er dreht ausschliesslich auf Zuruf der Anzeige am Stand.
+        document.body.classList.add('zuschauer');
+        // Am Beamer kann niemand drücken – der Aufruf schickt die Leute zum Stand.
+        if (CFG.spiegel && CFG.spiegel.zuschauerCta) {
+          document.getElementById('cta-hint').textContent = CFG.spiegel.zuschauerCta;
+        }
+        starteSpiegelEmpfang();
+        dbg('Zuschauer-Modus – wartet auf die Anzeige am Stand');
+      } else {
+        if (document.body) document.body.tabIndex = -1; // Body fokussierbar machen
+        bindInputs();
+        grabFocus();
+        setInterval(grabFocus, 2000);                   // Fokus periodisch nachfassen
+        document.addEventListener('visibilitychange', function () { if (!document.hidden) grabFocus(); });
+        dbg('Bereit. Auslöser-Taste = Code ' + CFG.behavior.triggerKeyCode);
+        starteSpiegelSender();
+        starteOnlineAbgleich();
+      }
       enterAttract();
-      starteOnlineAbgleich();
     });
   });
 

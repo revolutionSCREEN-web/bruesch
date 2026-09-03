@@ -133,6 +133,28 @@ window.GLUECKSRAD_CONFIG = {
     }
   },
 
+  /* ---- RADSPIEGEL: dasselbe Rad auf einem Beamer / zweiten Bildschirm ---
+     Die Anzeige am Stand meldet bei jedem Buzzer-Druck, auf welches Feld sie
+     dreht; jeder Zuschauer-Bildschirm spielt dieselbe Drehung gleichzeitig ab.
+
+       Anzeige am Stand    .../index.html
+       Beamer / Zweitbild  .../index.html?zuschauer=1
+
+     Der Zuschauer-Bildschirm nimmt keine Eingaben an, zählt nichts mit und
+     zeigt bewusst KEINEN QR-Code (sonst liesse er sich aus der Ferne
+     abscannen, ohne gedreht zu haben).
+
+     ⚠️ Das Rad am Stand hängt davon NICHT ab: Es wird nur gesendet, nie auf
+     eine Antwort gewartet. Ohne Netz dreht es unverändert weiter, dann bleibt
+     nur der Beamer stehen.                                                  */
+  spiegel: {
+    enabled: true,                   // false = Übertragung ganz aus
+    wsUrl:   'wss://bruesch-radspiegel.patrick-buch3r.workers.dev/kanal',
+    raum:    'bruesch',              // trennt mehrere Aktionen auf demselben Dienst
+    zuschauerCta:     'Am Glücksrad beim Brüesch-Stand mitmachen',
+    zuschauerHinweis: 'Gewinn am Brüesch-Stand abholen'
+  },
+
   /* ---- Ergebnis-Texte (Overlay) – Sie-Form (Gewerbeausstellung) --------- */
   messages: {
     cta:        'Drücken Sie den Buzzer',
