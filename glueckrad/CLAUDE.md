@@ -131,6 +131,18 @@ nie Branding/Texte hineinschreiben. Original-Plugin-Dateien nicht editieren.
     weiterhin für alle Tage. **Bei einer neuen Aktion die Sperre immer an der Öffnungsdauer
     ausrichten**, nicht pauschal setzen: Faustregel ~14 Drehungen pro Öffnungsstunde.
 
+11. **Radspiegel (`js/spiegel.js`, `?zuschauer=1`).** Die Anzeige am Stand sendet bei jeder
+    Drehung `{typ:'dreh', idx, feld}` über einen Cloudflare-Dienst (Ordner
+    `../radspiegel-worker`, Durable Object mit WebSocket); Zuschauer-Bildschirme spielen
+    dieselbe Drehung ab. **Regeln beim Erweitern:**
+    - Senden ist «feuern und vergessen» — nie auf eine Antwort warten, nie den Ablauf am
+      Stand davon abhängig machen. Ohne Netz muss das Rad unverändert laufen.
+    - Im Zuschauer-Modus **nicht verbuchen** (`ZUSCHAUER`-Flag in `app.js`), sonst zählt
+      jede Ausgabe doppelt und wird doppelt ins Sheet gemeldet.
+    - Im Zuschauer-Modus **keinen QR** zeigen — er wäre aus der Ferne abscannbar.
+    - `feld` (der Segmentname) wird mitgeschickt, damit der Zuschauer bei abweichender
+      `preise.txt` das richtige Feld über den Namen findet statt über die Nummer.
+
 ## Testen (headless)
 
 Es gibt keine Testdateien im Repo — Playwright-Skripte im Scratchpad erzeugen. Muster:

@@ -1,0 +1,21 @@
+# =============================================================================
+#  RADSPIEGEL  ·  Live-Übertragung des Brüesch Glücksrads auf weitere Bildschirme
+# -----------------------------------------------------------------------------
+#  Das Anzeigegerät am Stand meldet bei jedem Buzzer-Druck, auf welches Feld
+#  das Rad dreht. Alle Zuschauer-Bildschirme (Beamer) spielen dieselbe Drehung
+#  gleichzeitig ab. Der Dienst merkt sich nichts, er reicht nur weiter.
+#
+#  Deploy:   npx wrangler deploy
+#  Logs:     npx wrangler tail
+# =============================================================================
+name = "bruesch-radspiegel"
+main = "src/index.js"
+compatibility_date = "2026-09-01"
+
+[[durable_objects.bindings]]
+name = "KANAL"
+class_name = "RadKanal"
+
+[[migrations]]
+tag = "v1"
+new_sqlite_classes = ["RadKanal"]

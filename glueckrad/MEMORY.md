@@ -294,3 +294,34 @@ pro Stufe: Fr ab Klick 61, Sa ab 151, So ab 101, nie mehr als einer pro Tag; Kon
 bei 1200 Drehungen exakt eingehalten (Fr 100/50/50, Sa 200/100/100, So 100/50/50).
 
 ⚠️ Das Kundendokument nennt noch «ab dem 151. Klick» für alle Tage.
+
+
+## 03.09.2026 — Radspiegel: das Rad live auf Beamer/Zweitbildschirm
+
+Wunsch des Users: «einen Link, den ich auf einem zweiten Display integrieren kann, dort kann
+man nicht drücken, die Anzeige wird live geteilt» — für einen Beamer am Messestand.
+
+**Warum ein blosser zweiter Link nicht reicht:** Dieselbe Adresse auf einem zweiten Gerät ist
+eine eigenständige Instanz — das Rad dort steht still, während am Stand jemand dreht. Für eine
+Spiegelung braucht es einen Kanal zwischen den Geräten.
+
+**Gebaut:** `radspiegel-worker/` (Cloudflare Worker, Durable Object mit WebSocket-Hibernation,
+`bruesch-radspiegel.patrick-buch3r.workers.dev`) plus `js/spiegel.js` und ein Zuschauer-Modus
+in `app.js` (`index.html?zuschauer=1`). Das Ergebnis steht ohnehin VOR der Drehung fest, also
+wird nur der Feldindex verschickt und der Zuschauer spielt dieselbe Animation.
+
+**Messwerte:** 31 ms über das Internet, 55–77 ms vom Buzzer-Druck bis zum Anlaufen des zweiten
+Rads. Radwinkel und Ergebnis in allen Läufen identisch.
+
+**Entscheidungen:**
+- Zuschauer zeigt **keinen QR** (sonst aus der Ferne abscannbar) → stattdessen «Gewinn am
+  Brüesch-Stand abholen», Aufruf «Am Glücksrad beim Brüesch-Stand mitmachen».
+- Zuschauer **verbucht nichts** — sonst wäre jede Ausgabe doppelt gezählt und doppelt im Sheet.
+- Der Worker verwirft Nachrichten von Zuschauern; nur die Rolle `display` darf senden.
+- Ping alle 30 s vom Stand, damit WLAN-Router die Leitung nicht wegen Untätigkeit kappen.
+- Segmentname wird mitgeschickt: Bei abweichender `preise.txt` sucht der Zuschauer das Feld
+  über den Namen statt über die Nummer.
+
+**Ausfall geprüft:** Dienst mitten im Betrieb gestoppt → der Stand dreht und zählt unverändert
+weiter, der Beamer zeigt den Verbindungspunkt rot und hängt sich selbst wieder an (2 s, dann
+wachsend bis 20 s). Layout auch im Querformat 1920×1080 geprüft (Logo links, Rad rechts).
