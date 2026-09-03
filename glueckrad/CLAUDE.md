@@ -143,6 +143,14 @@ nie Branding/Texte hineinschreiben. Original-Plugin-Dateien nicht editieren.
     - `feld` (der Segmentname) wird mitgeschickt, damit der Zuschauer bei abweichender
       `preise.txt` das richtige Feld über den Namen findet statt über die Nummer.
 
+12. **JSONP-Callback stilllegen, nicht löschen.** Antwortet Apps Script erst nach dem
+    Zeitlimit, ruft das nachgeladene Script seinen Callback trotzdem auf — war er per
+    `delete` entfernt, gibt es «`_radCb… is not defined`». In `jsonpAbruf()` wird er darum
+    durch eine leere Funktion ersetzt und erst nach 30 s aufgeräumt. `zeitlimitMs` steht auf
+    **10 s**: Apps Script läuft nach einer Ruhephase träge an, und ein verpasster
+    Start-Abgleich setzt die Sheet-Meldungen bis zum nächsten Versuch (3 min) aus.
+    Gefunden im nachgestellten Tizen-Browser — dieser Test lohnt sich nach jeder Änderung.
+
 ## Testen (headless)
 
 Es gibt keine Testdateien im Repo — Playwright-Skripte im Scratchpad erzeugen. Muster:
